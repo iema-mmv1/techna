@@ -135,7 +135,96 @@ async function register(event) {
     }
   }
 }
-async function login(event){event.preventDefault();const form=event.currentTarget,message=document.getElementById("loginMessage");if(!supabaseClient){message.textContent="Configure o Supabase antes de entrar.";return}const identifier=form.elements.namedItem("identifier")?.value?.trim();const password=form.elements.namedItem("password")?.value;if(!identifier||!password){message.textContent="Informe os dados de acesso.";return}try{const email=identifier.includes("@")?identifier:(await supabaseClient.rpc("resolve_username",{username_input:identifier})).data?.[0]?.email;if(!email){message.textContent="E-mail ou username não encontrado.";return}const result=await supabaseClient.auth.signInWithPassword({email,password});if(result.error)throw result.error;message.className="message ok";message.textContent="Login realizado."}catch(error){message.textContent=error?.message||"Não foi possível entrar."}}
+async function login(event) {
+  event.preventDefault();
+
+  const form = event.currentTarget;
+  const message = document.getElementById("loginMessage");
+  const button = form.querySelector('button[type="submit"]');
+
+  if (!message) {
+    console.error("Elemento #loginMessage não foi encontrado.");
+    return;
+  }
+
+  if (!supabaseClient) {
+    message.textContent =
+      "Configure o Supabase antes de entrar.";
+    return;
+  }
+
+  const identifier =
+    form.elements.namedItem("identifier")?.value?.trim();
+
+  const password =
+    form.elements.namedItem("password")?.value || "";
+
+  message.textContent = "";
+
+  if (!identifier) {
+    message.textContent =
+      "Informe seu e-mail ou nome de usuário.";
+    return;
+  }
+
+  if (!password || password.length < 6) {
+    message.textContent =
+      "A senha precisa ter pelo menos 6 caracteres.";
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Entrando...";
+  }
+
+  try {
+    let email = identifier.toLowerCase();
+
+    if (!identifier.includes("@")) {
+      const result = await supabaseClient.rpc(
+        "resolve_username",
+        {
+          username_input: identifier
+        }
+      );
+
+      email = result.data?.[0]?.email || null;
+    }
+
+    if (!email) {
+      message.textContent =
+        "E-mail ou nome de usuário não encontrado.";
+      return;
+    }
+
+    const result =
+      await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    message.className = "message ok";
+    message.textContent =
+      "Login realizado com sucesso.";
+  } catch (error) {
+    console.error("[Tecna login]", error);
+
+    message.className = "message";
+    message.textContent =
+      error?.message ||
+      "Não foi possível entrar.";
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Entrar";
+    }
+  }
+}
 document.addEventListener("submit",event=>{if(event.target?.id==="registerForm")register(event);if(event.target?.id==="loginForm")login(event)});document.addEventListener("click",event=>{const action=event.target.closest("[data-action]"),oauth=event.target.closest("[data-oauth]");if(action&&action.dataset.action==="register")registerModal();if(oauth){if(!supabaseClient){alert("Configure o Supabase antes de usar este botão.");return}supabaseClient.auth.signInWithOAuth({provider:oauth.dataset.oauth,options:{redirectTo:location.href}})}});modalRoot.addEventListener("click",event=>{if(event.target.hasAttribute("data-close"))closeModal()});renderLogin();
 </script>
 </body>
