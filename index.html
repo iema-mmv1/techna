@@ -15,145 +15,42 @@
 <script>
 const SUPABASE_URL="https://edtgebzafwkounipfvrb.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_t2nSHz0OetO50wFuSGct6A_tiRt3Fu-";
-const isConfigured=SUPABASE_URL.startsWith("https://")&&!SUPABASE_URL.includes("COLE_A_")&&SUPABASE_ANON_KEY&&!SUPABASE_ANON_KEY.includes("COLE_A_");
+const SITE_URL=window.location.origin+window.location.pathname;
+const isConfigured=SUPABASE_URL.startsWith("https://")&&!SUPABASE_URL.includes("COLE_A_")&&SUPABASE_ANON_KEY.startsWith("sb_publishable_");
 const supabaseClient=isConfigured&&window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}}):null;
 const root=document.getElementById("root"),modalRoot=document.getElementById("modalRoot");
+const state={session:null,user:null,profile:null};
 
-function renderLogin(){root.innerHTML=`<main class="login"><section class="art"><div class="brand"><span class="brand-mark">✦</span><span class="brand-name">Tecna</span></div><div><h1>Ideias que se conectam.</h1><p>Crie, acompanhe e compartilhe projetos que transformam o futuro da tecnologia.</p></div><small>Comunidade educacional Tecna.</small></section><section class="panel"><div class="auth"><p class="muted">Acesso à plataforma</p><h2>Bem-vindo ao Tecna</h2><p class="muted">Entre para acompanhar e compartilhar projetos.</p><form id="loginForm"><div class="field"><label>E-mail ou username</label><input class="input" name="identifier" autocomplete="username" required></div><div class="field"><label>Senha</label><input class="input" name="password" type="password" minlength="6" autocomplete="current-password" required></div><p id="loginMessage" class="message" role="alert"></p><button type="submit" class="btn primary full">Entrar</button></form><div class="divider">ou continue com</div><div class="social"><button type="button" data-oauth="google">Google</button><button type="button" data-oauth="facebook">Facebook</button></div><p class="muted" style="text-align:center;margin-top:22px">Ainda não tem uma conta? <button type="button" class="btn secondary" data-action="register">Criar conta</button></p></div></section></main>`}
+function renderLogin(){root.innerHTML=`<main class="login"><section class="art"><div class="brand"><span class="brand-mark">✦</span><span class="brand-name">Tecna</span></div><div><h1>Ideias que se conectam.</h1><p>Crie, acompanhe e compartilhe projetos que transformam o futuro da tecnologia.</p></div><small>Comunidade educacional Tecna.</small></section><section class="panel"><div class="auth"><p class="muted">Acesso à plataforma</p><h2>Bem-vindo ao Tecna</h2><p class="muted">Entre para acompanhar e compartilhar projetos.</p><form id="loginForm" novalidate><div class="field"><label for="loginIdentifier">E-mail ou username</label><input id="loginIdentifier" class="input" name="identifier" autocomplete="username" required></div><div class="field"><label for="loginPassword">Senha</label><input id="loginPassword" class="input" name="password" type="password" minlength="6" autocomplete="current-password" required></div><p id="loginMessage" class="message" role="alert"></p><button type="submit" class="btn primary full">Entrar</button></form><div class="divider">ou continue com</div><div class="social"><button type="button" data-oauth="google">Google</button><button type="button" data-oauth="facebook">Facebook</button></div><p class="muted" style="text-align:center;margin-top:22px">Ainda não tem uma conta? <button type="button" class="btn secondary" data-action="register">Criar conta</button></p></div></section></main>`}
 
-function modal(title,body){modalRoot.innerHTML=`<div class="modal-bg" data-close><div class="modal"><div class="modal-head"><h2>${title}</h2><button type="button" class="close" data-close>×</button></div>${body}</div></div>`}
+function modal(title,body){modalRoot.innerHTML=`<div class="modal-bg" data-close-modal><div class="modal"><div class="modal-head"><h2>${title}</h2><button type="button" class="close" data-close-modal>×</button></div>${body}</div></div>`}
 function closeModal(){modalRoot.innerHTML=""}
 
-function registerModal(){modal("Criar conta",`<form id="registerForm"><div class="field"><label>Nome completo</label><input class="input" name="nome" required></div><div class="field"><label>Username</label><input class="input" name="username" id="registerUsername" pattern="[A-Za-z0-9_]+" required><span class="availability" id="usernameState">Digite para receber sugestões.</span></div><div class="field"><label>E-mail</label><input class="input" type="email" name="email" autocomplete="email" required></div><div class="field"><label>Senha</label><input class="input" type="password" name="password" minlength="6" autocomplete="new-password" required></div><div class="role-grid"><button type="button" class="role selected" data-role="aluno"><strong>Aluno</strong><small>Cria e participa de projetos</small></button><button type="button" class="role" data-role="professor"><strong>Professor</strong><small>Orienta projetos</small></button></div><input type="hidden" name="tipo" value="aluno"><div class="field" id="courseField"><label>Curso</label><select class="select" name="curso"><option value="">Escolha seu curso</option><option>Marketing</option><option>Administração</option><option>Informática</option><option>Informática para Internet</option></select></div><p id="registerMessage" class="message" role="alert"></p><button type="submit" class="btn primary full">Criar conta</button></form>`);document.querySelectorAll("[data-role]").forEach(button=>button.onclick=()=>{document.querySelectorAll("[data-role]").forEach(x=>x.classList.remove("selected"));button.classList.add("selected");document.querySelector('[name="tipo"]').value=button.dataset.role;document.getElementById("courseField").style.display=button.dataset.role==="aluno"?"block":"none"});document.getElementById("registerUsername").addEventListener("input",checkUsername)}
+function registerModal(){modal("Criar conta",`<form id="registerForm" novalidate><div class="field"><label for="registerName">Nome completo</label><input id="registerName" class="input" name="nome" autocomplete="name" required></div><div class="field"><label for="registerUsername">Username</label><input id="registerUsername" class="input" name="username" pattern="[A-Za-z0-9_]+" autocomplete="username" required><span class="availability" id="usernameState">Digite para receber sugestões.</span></div><div class="field"><label for="registerEmail">E-mail</label><input id="registerEmail" class="input" type="email" name="email" autocomplete="email" required></div><div class="field"><label for="registerPassword">Senha</label><input id="registerPassword" class="input" type="password" name="password" minlength="6" autocomplete="new-password" required></div><div class="role-grid"><button type="button" class="role selected" data-role="aluno"><strong>Aluno</strong><small>Cria e participa de projetos</small></button><button type="button" class="role" data-role="professor"><strong>Professor</strong><small>Orienta projetos</small></button></div><input type="hidden" name="tipo" value="aluno"><div class="field" id="courseField"><label for="registerCourse">Curso</label><select id="registerCourse" class="select" name="curso"><option value="">Escolha seu curso</option><option value="Marketing">Marketing</option><option value="Administração">Administração</option><option value="Informática">Informática</option><option value="Informática para Internet">Informática para Internet</option></select></div><p id="registerMessage" class="message" role="alert"></p><button type="submit" class="btn primary full">Criar conta</button></form>`);document.querySelectorAll("[data-role]").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll("[data-role]").forEach(x=>x.classList.remove("selected"));button.classList.add("selected");document.querySelector('[name="tipo"]').value=button.dataset.role;document.getElementById("courseField").style.display=button.dataset.role==="aluno"?"block":"none"}));document.getElementById("registerUsername").addEventListener("input",checkUsername)}
 
-async function checkUsername(){const input=document.getElementById("registerUsername"),state=document.getElementById("usernameState");if(!input||!state)return;input.value=input.value.toLowerCase().replace(/[^a-z0-9_]/g,"");if(input.value.length<3){state.textContent="Use pelo menos 3 caracteres.";return}const suggestions=[input.value+"01",input.value+"_tecna",input.value+new Date().getFullYear()];if(!supabaseClient){state.textContent="Sugestões: "+suggestions.join(" · ");return}const result=await supabaseClient.from("profiles").select("id").ilike("username",input.value).maybeSingle();state.textContent=result.data?"Username ocupado. Sugestões: "+suggestions.join(" · "):"Username disponível. Sugestões: "+suggestions.join(" · ")}
+async function checkUsername(){const input=document.getElementById("registerUsername"),stateElement=document.getElementById("usernameState");if(!input||!stateElement)return;input.value=input.value.toLowerCase().replace(/[^a-z0-9_]/g,"");if(input.value.length<3){stateElement.textContent="Use pelo menos 3 caracteres.";return}const suggestions=[input.value+"01",input.value+"_tecna",input.value+new Date().getFullYear()];if(!supabaseClient){stateElement.textContent="Sugestões: "+suggestions.join(" · ");return}const result=await supabaseClient.from("profiles").select("id").ilike("username",input.value).maybeSingle();stateElement.textContent=result.error?"Não foi possível verificar agora.":result.data?"Username ocupado. Sugestões: "+suggestions.join(" · "):"Username disponível. Sugestões: "+suggestions.join(" · ")}
 
-async function findEmailByUsername(username){
-  const normalized=String(username||"").trim().toLowerCase();
-  if(!normalized)return null;
+function authError(error){const text=String(error?.message||"").toLowerCase();if(text.includes("email not confirmed"))return"Confirme seu e-mail antes de entrar.";if(text.includes("invalid login credentials"))return"E-mail/username ou senha incorretos.";if(text.includes("already registered"))return"Este e-mail já possui cadastro.";if(text.includes("failed to fetch"))return"Não foi possível conectar ao Supabase.";return error?.message||"Não foi possível concluir a operação."}
 
-  const rpcResult=await supabaseClient.rpc("resolve_username",{username_input:normalized});
-  if(!rpcResult.error&&rpcResult.data?.[0]?.email){
-    return rpcResult.data[0].email;
-  }
+async function findEmailByUsername(username){const normalized=String(username||"").trim().toLowerCase();if(!normalized||!supabaseClient)return null;const rpcResult=await supabaseClient.rpc("resolve_username",{username_input:normalized});if(!rpcResult.error&&rpcResult.data?.[0]?.email)return rpcResult.data[0].email;return null}
 
-  const profileResult=await supabaseClient.from("profiles").select("email").ilike("username",normalized).maybeSingle();
-  if(!profileResult.error&&profileResult.data?.email){
-    return profileResult.data.email;
-  }
+async function register(event){event.preventDefault();const form=event.currentTarget,message=document.getElementById("registerMessage"),button=form.querySelector('button[type="submit"]');const nome=form.elements.namedItem("nome")?.value?.trim();const username=form.elements.namedItem("username")?.value?.trim().toLowerCase();const email=form.elements.namedItem("email")?.value?.trim().toLowerCase();const password=form.elements.namedItem("password")?.value||"";const tipo=form.elements.namedItem("tipo")?.value;const curso=form.elements.namedItem("curso")?.value||null;message.className="message";message.textContent="";if(!nome){message.textContent="Informe seu nome completo.";return}if(!username||username.length<3){message.textContent="O username precisa ter pelo menos 3 caracteres.";return}if(!/^[a-z0-9_]+$/.test(username)){message.textContent="O username só pode conter letras, números e sublinhado.";return}if(!email||!email.includes("@")){message.textContent="Informe um e-mail válido.";return}if(password.length<6){message.textContent="A senha precisa ter pelo menos 6 caracteres.";return}if(!["aluno","professor"].includes(tipo)){message.textContent="Escolha Aluno ou Professor.";return}if(tipo==="aluno"&&!curso){message.textContent="Escolha seu curso.";return}if(!supabaseClient){message.textContent="Configure o Supabase antes do cadastro.";return}button.disabled=true;button.textContent="Criando conta...";try{const result=await supabaseClient.auth.signUp({email,password,options:{data:{nome,username,tipo_solicitado:tipo,curso:tipo==="aluno"?curso:null}}});if(result.error)throw result.error;message.classList.add("ok");message.textContent=result.data?.session?"Cadastro realizado com sucesso.":"Cadastro criado. Confirme o e-mail antes de entrar.";if(result.data?.session){await afterLogin(result.data.session);closeModal()}}catch(error){console.error("[Tecna cadastro]",error);message.textContent=authError(error)}finally{button.disabled=false;button.textContent="Criar conta"}}
 
-  return null;
-}
+async function login(event){event.preventDefault();const form=event.currentTarget,message=document.getElementById("loginMessage"),button=form.querySelector('button[type="submit"]');if(!message)return;if(!supabaseClient){message.textContent="Configure o Supabase antes de entrar.";return}const identifier=form.elements.namedItem("identifier")?.value?.trim();const password=form.elements.namedItem("password")?.value||"";message.className="message";message.textContent="";if(!identifier){message.textContent="Informe seu e-mail ou nome de usuário.";return}if(password.length<6){message.textContent="A senha precisa ter pelo menos 6 caracteres.";return}button.disabled=true;button.textContent="Entrando...";try{const email=identifier.includes("@")==true?identifier.toLowerCase():await findEmailByUsername(identifier);if(!email){message.textContent="E-mail ou nome de usuário não encontrado.";return}const result=await supabaseClient.auth.signInWithPassword({email,password});if(result.error)throw result.error;message.classList.add("ok");message.textContent="Login realizado com sucesso.";await afterLogin(result.data.session)}catch(error){console.error("[Tecna login]",error);message.textContent=authError(error)}finally{button.disabled=false;button.textContent="Entrar"}}
 
-function authError(error){
-  const message=String(error?.message||"");
-  if(message.toLowerCase().includes("email not confirmed"))return "Confirme seu e-mail antes de entrar.";
-  if(message.toLowerCase().includes("invalid login credentials"))return "E-mail/username ou senha incorretos.";
-  if(message.toLowerCase().includes("already registered"))return "Este e-mail já possui cadastro.";
-  return error?.message||"Não foi possível concluir a operação.";
-}
+async function afterLogin(session){state.session=session;state.user=session?.user||null;renderLoggedIn()}
+function renderLoggedIn(){const name=state.user?.user_metadata?.nome||state.user?.email||"usuário";root.innerHTML=`<main style="min-height:100vh;display:grid;place-items:center;padding:24px"><section style="width:min(100%,560px);padding:32px;border:1px solid var(--line);border-radius:20px;background:white;text-align:center"><p class="muted">Acesso realizado</p><h1 style="color:var(--purple)">Olá, ${escapeHtml(name)}!</h1><p class="muted">Seu login foi concluído com sucesso.</p><button class="btn primary" data-action="logout">Sair</button></section></main>`}
+function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[char]))}
 
-async function register(event){
-  event.preventDefault();
-  const form=event.currentTarget;
-  const message=document.getElementById("registerMessage");
-  const button=form.querySelector('button[type="submit"]');
-  const nome=form.elements.namedItem("nome")?.value?.trim();
-  const username=form.elements.namedItem("username")?.value?.trim().toLowerCase();
-  const email=form.elements.namedItem("email")?.value?.trim().toLowerCase();
-  const password=form.elements.namedItem("password")?.value||"";
-  const tipo=form.elements.namedItem("tipo")?.value;
-  const curso=form.elements.namedItem("curso")?.value||null;
+async function oauthLogin(provider){if(!supabaseClient){alert("Configure o Supabase antes de usar este botão.");return}const result=await supabaseClient.auth.signInWithOAuth({provider,options:{redirectTo:SITE_URL}});if(result.error)alert(authError(result.error))}
 
-  message.textContent="";
-  message.classList.remove("ok");
+document.addEventListener("submit",event=>{if(event.target?.id==="registerForm")register(event);if(event.target?.id==="loginForm")login(event)});
+document.addEventListener("click",event=>{const action=event.target.closest("[data-action]"),oauth=event.target.closest("[data-oauth]");if(action?.dataset.action==="register")registerModal();if(action?.dataset.action==="logout")supabaseClient?.auth.signOut().then(()=>{state.session=null;state.user=null;renderLogin()});if(oauth)oauthLogin(oauth.dataset.oauth)});
+modalRoot.addEventListener("click",event=>{if(event.target.hasAttribute("data-close-modal"))closeModal()});
 
-  if(!nome){message.textContent="Informe seu nome completo.";return}
-  if(!username||username.length<3){message.textContent="O username precisa ter pelo menos 3 caracteres.";return}
-  if(!/^[a-z0-9_]+$/.test(username)){message.textContent="O username só pode conter letras, números e sublinhado.";return}
-  if(!email||!email.includes("@")){message.textContent="Informe um e-mail válido.";return}
-  if(password.length<6){message.textContent="A senha precisa ter pelo menos 6 caracteres.";return}
-  if(!["aluno","professor"].includes(tipo)){message.textContent="Escolha Aluno ou Professor.";return}
-  if(tipo==="aluno"&&!curso){message.textContent="Escolha seu curso.";return}
-  if(!supabaseClient){message.textContent="Configure o Supabase antes do cadastro.";return}
+if(supabaseClient){supabaseClient.auth.onAuthStateChange((_event,session)=>{state.session=session;state.user=session?.user||null;if(session&&!root.querySelector("[data-authenticated]")){renderLoggedIn()}})}
 
-  button.disabled=true;
-  button.textContent="Criando conta...";
-
-  try{
-    const result=await supabaseClient.auth.signUp({email,password,options:{data:{nome,username,tipo_solicitado:tipo,curso:tipo==="aluno"?curso:null}}});
-    if(result.error)throw result.error;
-    message.classList.add("ok");
-    message.textContent=result.data?.session?"Cadastro realizado com sucesso.":"Cadastro criado. Confirme o e-mail.";
-    if(result.data?.session)closeModal();
-  }catch(error){
-    console.error("[Tecna cadastro]",error);
-    message.textContent=authError(error);
-  }finally{
-    button.disabled=false;
-    button.textContent="Criar conta";
-  }
-}
-
-async function login(event){
-  event.preventDefault();
-  const form=event.currentTarget;
-  const message=document.getElementById("loginMessage");
-  const button=form.querySelector('button[type="submit"]');
-
-  if(!message){console.error("Elemento #loginMessage não foi encontrado.");return}
-  if(!supabaseClient){message.textContent="Configure o Supabase antes de entrar.";return}
-
-  const identifier=form.elements.namedItem("identifier")?.value?.trim();
-  const password=form.elements.namedItem("password")?.value||"";
-  message.textContent="";
-  message.classList.remove("ok");
-
-  if(!identifier){message.textContent="Informe seu e-mail ou nome de usuário.";return}
-  if(password.length<6){message.textContent="A senha precisa ter pelo menos 6 caracteres.";return}
-
-  button.disabled=true;
-  button.textContent="Entrando...";
-
-  try{
-    const email=identifier.includes("@")?identifier.toLowerCase():await findEmailByUsername(identifier);
-    if(!email){message.textContent="E-mail ou nome de usuário não encontrado.";return}
-    const result=await supabaseClient.auth.signInWithPassword({email,password});
-    if(result.error)throw result.error;
-    message.classList.add("ok");
-    message.textContent="Login realizado com sucesso.";
-  }catch(error){
-    console.error("[Tecna login]",error);
-    message.textContent=authError(error);
-  }finally{
-    button.disabled=false;
-    button.textContent="Entrar";
-  }
-}
-
-async function oauthLogin(provider){
-  if(!supabaseClient){alert("Configure o Supabase antes de usar este botão.");return}
-  const result=await supabaseClient.auth.signInWithOAuth({provider,options:{redirectTo:location.href}});
-  if(result.error)alert(authError(result.error));
-}
-
-document.addEventListener("submit",event=>{
-  if(event.target?.id==="registerForm")register(event);
-  if(event.target?.id==="loginForm")login(event);
-});
-
-document.addEventListener("click",event=>{
-  const action=event.target.closest("[data-action]");
-  const oauth=event.target.closest("[data-oauth]");
-  if(action?.dataset.action==="register")registerModal();
-  if(oauth)oauthLogin(oauth.dataset.oauth);
-});
-
-modalRoot.addEventListener("click",event=>{
-  if(event.target.hasAttribute("data-close"))closeModal();
-});
-
-renderLogin();
+(async function init(){if(!supabaseClient){renderLogin();return}const result=await supabaseClient.auth.getSession();if(result.data?.session){state.session=result.data.session;state.user=result.data.session.user;renderLoggedIn()}else{renderLogin()}})();
 </script>
 </body>
 </html>
