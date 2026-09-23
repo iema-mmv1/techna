@@ -1,0 +1,127 @@
+<!-- SUBSTITUA O SEU index.html PELO CONTEÚDO DO ARQUIVO ORIGINAL QUE VOCÊ ENVIOU, MANTENDO TUDO IGUAL, E ALTERE SOMENTE A FUNÇÃO register ABAIXO. -->
+
+<!--
+A função corrigida é esta. No seu arquivo original, localize a função:
+async function register(e){...}
+
+Apague somente essa função e substitua pela versão abaixo.
+-->
+
+<script>
+async function register(e) {
+  e.preventDefault();
+
+  const f = e.currentTarget;
+  const msg = document.getElementById('registerMessage');
+  const button = f.querySelector('button[type="submit"]');
+
+  const nome = f.elements.namedItem('nome')?.value?.trim();
+  const username = f.elements.namedItem('username')?.value?.trim().toLowerCase();
+  const email = f.elements.namedItem('email')?.value?.trim().toLowerCase();
+  const password = f.elements.namedItem('password')?.value;
+  const tipo = f.elements.namedItem('tipo')?.value;
+  const curso = f.elements.namedItem('curso')?.value || null;
+
+  if (!nome) {
+    msg.textContent = 'Informe seu nome completo.';
+    return;
+  }
+
+  if (!username || username.length < 3) {
+    msg.textContent = 'O username precisa ter pelo menos 3 caracteres.';
+    return;
+  }
+
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    msg.textContent =
+      'O username só pode conter letras, números e sublinhado.';
+    return;
+  }
+
+  if (!email || !email.includes('@')) {
+    msg.textContent = 'Informe um e-mail válido.';
+    return;
+  }
+
+  if (!password || password.length < 6) {
+    msg.textContent = 'A senha precisa ter pelo menos 6 caracteres.';
+    return;
+  }
+
+  if (!['aluno', 'professor'].includes(tipo)) {
+    msg.textContent = 'Escolha Aluno ou Professor.';
+    return;
+  }
+
+  if (tipo === 'aluno' && !curso) {
+    msg.textContent = 'Escolha seu curso.';
+    return;
+  }
+
+  if (!supabaseClient) {
+    msg.textContent = 'Configure o Supabase antes do cadastro.';
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Criando conta...';
+  }
+
+  msg.textContent = '';
+  msg.classList.remove('ok');
+
+  try {
+    const r = await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          nome,
+          username,
+          tipo_solicitado: tipo,
+          curso: tipo === 'aluno' ? curso : null
+        }
+      }
+    });
+
+    if (r.error) {
+      msg.textContent = apiError(r.error);
+      return;
+    }
+
+    msg.classList.add('ok');
+    msg.textContent = r.data?.session
+      ? 'Cadastro realizado com sucesso.'
+      : 'Cadastro criado. Confirme o e-mail para entrar.';
+
+    if (typeof closeModal === 'function' && r.data?.session) {
+      closeModal();
+    }
+
+    if (typeof showToast === 'function') {
+      showToast(
+        r.data?.session
+          ? 'Cadastro criado com sucesso.'
+          : 'Cadastro criado. Confirme seu e-mail.'
+      );
+    }
+  } catch (error) {
+    console.error('[Tecna cadastro]', error);
+    msg.textContent =
+      error?.message || 'Não foi possível criar a conta.';
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'Criar conta';
+    }
+  }
+}
+</script>
+
+<!-- IMPORTANTE:
+1. Não cole este arquivo inteiro dentro do seu index.html.
+2. Mantenha o seu HTML original.
+3. Substitua somente a função register original por esta função.
+4. Confirme que o botão do cadastro possui type="submit".
+-->
