@@ -24,7 +24,117 @@ function closeModal(){modalRoot.innerHTML=""}
 function registerModal(){modal("Criar conta",`<form id="registerForm"><div class="field"><label>Nome completo</label><input class="input" name="nome" required></div><div class="field"><label>Username</label><input class="input" name="username" id="registerUsername" pattern="[A-Za-z0-9_]+" required><span class="availability" id="usernameState">Digite para receber sugestões.</span></div><div class="field"><label>E-mail</label><input class="input" type="email" name="email" required></div><div class="field"><label>Senha</label><input class="input" type="password" name="password" minlength="6" required></div><div class="role-grid"><button type="button" class="role selected" data-role="aluno"><strong>Aluno</strong><small>Cria e participa de projetos</small></button><button type="button" class="role" data-role="professor"><strong>Professor</strong><small>Orienta projetos</small></button></div><input type="hidden" name="tipo" value="aluno"><div class="field" id="courseField"><label>Curso</label><select class="select" name="curso"><option>Marketing</option><option>Administração</option><option>Informática</option><option>Informática para Internet</option></select></div><p id="registerMessage" class="message"></p><button type="submit" class="btn primary full">Criar conta</button></form>`);document.querySelectorAll("[data-role]").forEach(button=>button.onclick=()=>{document.querySelectorAll("[data-role]").forEach(x=>x.classList.remove("selected"));button.classList.add("selected");document.querySelector('[name="tipo"]').value=button.dataset.role;document.getElementById("courseField").style.display=button.dataset.role==="aluno"?"block":"none"});document.getElementById("registerUsername").addEventListener("input",checkUsername)}
 async function checkUsername(){const input=document.getElementById("registerUsername"),state=document.getElementById("usernameState");if(!input||!state)return;input.value=input.value.toLowerCase().replace(/[^a-z0-9_]/g,"");if(input.value.length<3){state.textContent="Use pelo menos 3 caracteres.";return}const suggestions=[input.value+"01",input.value+"_tecna",input.value+new Date().getFullYear()];if(!supabaseClient){state.textContent="Sugestões: "+suggestions.join(" · ");return}const result=await supabaseClient.from("profiles").select("id").ilike("username",input.value).maybeSingle();state.textContent=result.data?"Username ocupado. Sugestões: "+suggestions.join(" · "):"Username disponível. Sugestões: "+suggestions.join(" · ")}
 /* Corrige exclusivamente o erro original de acesso aos campos do cadastro. */
-async function register(event){event.preventDefault();const form=event.currentTarget;const message=document.getElementById("registerMessage");const button=form.querySelector('button[type="submit"]');const nome=form.elements.namedItem("nome")?.value?.trim();const username=form.elements.namedItem("username")?.value?.trim().toLowerCase();const email=form.elements.namedItem("email")?.value?.trim().toLowerCase();const password=form.elements.namedItem("password")?.value;const tipo=form.elements.namedItem("tipo")?.value;const curso=form.elements.namedItem("curso")?.value||null;if(!nome){message.textContent="Informe seu nome completo.";return}if(!username||username.length<3){message.textContent="O username precisa ter pelo menos 3 caracteres.";return}if(!/^[a-z0-9_]+$/.test(username)){message.textContent="O username só pode conter letras, números e sublinhado.";return}if(!email||!email.includes("@")){message.textContent="Informe um e-mail válido.";return}if(!password||password.length<6){message.textContent="A senha precisa ter pelo menos 6 caracteres.";return}if(!["aluno","professor"].includes(tipo)){message.textContent="Escolha Aluno ou Professor.";return}if(tipo==="aluno"&&!curso){message.textContent="Escolha seu curso.";return}if(!supabaseClient){message.textContent="Configure o Supabase antes do cadastro.";return}if(button){button.disabled=true;button.textContent="Criando conta..."}message.textContent="";try{const result=await supabaseClient.auth.signUp({email,password,options:{data:{nome,username,tipo_solicitado:tipo,curso:tipo==="aluno"?curso:null}}});if(result.error){message.textContent=result.error.message;return}message.classList.add("ok");message.textContent=result.data?.session?"Cadastro realizado com sucesso.":"Cadastro criado. Confirme o e-mail.";if(result.data?.session)closeModal()}catch(error){console.error("[Tecna cadastro]",error);message.textContent=error?.message||"Não foi possível criar a conta."}finally{if(button){button.disabled=false;button.textContent="Criar conta"}}}
+async function register(event) {
+  event.preventDefault();
+
+  const form = event.target || event.currentTarget;
+  const message = document.getElementById("registerMessage");
+  const button = form.querySelector('button[type="submit"]');
+
+  const nome = form.querySelector('[name="nome"]')?.value?.trim();
+  const username = form.querySelector('[name="username"]')?.value?.trim().toLowerCase();
+  const email = form.querySelector('[name="email"]')?.value?.trim().toLowerCase();
+  const password = form.querySelector('[name="password"]')?.value;
+  const tipo = form.querySelector('[name="tipo"]')?.value;
+  const curso = form.querySelector('[name="curso"]')?.value || null;
+
+  if (!message) {
+    console.error("Elemento #registerMessage não encontrado.");
+    return;
+  }
+
+  if (!nome) {
+    message.textContent = "Informe seu nome completo.";
+    return;
+  }
+
+  if (!username || username.length < 3) {
+    message.textContent =
+      "O username precisa ter pelo menos 3 caracteres.";
+    return;
+  }
+
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    message.textContent =
+      "O username só pode conter letras, números e sublinhado.";
+    return;
+  }
+
+  if (!email || !email.includes("@")) {
+    message.textContent = "Informe um e-mail válido.";
+    return;
+  }
+
+  if (!password || password.length < 6) {
+    message.textContent =
+      "A senha precisa ter pelo menos 6 caracteres.";
+    return;
+  }
+
+  if (!["aluno", "professor"].includes(tipo)) {
+    message.textContent = "Escolha Aluno ou Professor.";
+    return;
+  }
+
+  if (tipo === "aluno" && !curso) {
+    message.textContent = "Escolha seu curso.";
+    return;
+  }
+
+  if (!supabaseClient) {
+    message.textContent =
+      "Configure o Supabase antes do cadastro.";
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Criando conta...";
+  }
+
+  message.textContent = "";
+  message.classList.remove("ok");
+
+  try {
+    const result = await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          nome,
+          username,
+          tipo_solicitado: tipo,
+          curso: tipo === "aluno" ? curso : null
+        }
+      }
+    });
+
+    console.log("[Tecna cadastro]", result);
+
+    if (result.error) {
+      message.textContent = result.error.message;
+      return;
+    }
+
+    message.classList.add("ok");
+    message.textContent = result.data?.session
+      ? "Cadastro realizado com sucesso."
+      : "Cadastro criado. Confirme o e-mail.";
+
+    if (result.data?.session) {
+      closeModal();
+    }
+  } catch (error) {
+    console.error("[Tecna cadastro]", error);
+    message.textContent =
+      error?.message || "Não foi possível criar a conta.";
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Criar conta";
+    }
+  }
+}
 async function login(event){event.preventDefault();const form=event.currentTarget,message=document.getElementById("loginMessage");if(!supabaseClient){message.textContent="Configure o Supabase antes de entrar.";return}const identifier=form.elements.namedItem("identifier")?.value?.trim();const password=form.elements.namedItem("password")?.value;if(!identifier||!password){message.textContent="Informe os dados de acesso.";return}try{const email=identifier.includes("@")?identifier:(await supabaseClient.rpc("resolve_username",{username_input:identifier})).data?.[0]?.email;if(!email){message.textContent="E-mail ou username não encontrado.";return}const result=await supabaseClient.auth.signInWithPassword({email,password});if(result.error)throw result.error;message.className="message ok";message.textContent="Login realizado."}catch(error){message.textContent=error?.message||"Não foi possível entrar."}}
 document.addEventListener("submit",event=>{if(event.target?.id==="registerForm")register(event);if(event.target?.id==="loginForm")login(event)});document.addEventListener("click",event=>{const action=event.target.closest("[data-action]"),oauth=event.target.closest("[data-oauth]");if(action&&action.dataset.action==="register")registerModal();if(oauth){if(!supabaseClient){alert("Configure o Supabase antes de usar este botão.");return}supabaseClient.auth.signInWithOAuth({provider:oauth.dataset.oauth,options:{redirectTo:location.href}})}});modalRoot.addEventListener("click",event=>{if(event.target.hasAttribute("data-close"))closeModal()});renderLogin();
 </script>
