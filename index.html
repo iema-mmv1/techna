@@ -187,6 +187,80 @@ body:has(.login) .sidebar,body:has(.login) .layout>.sidebar{display:none!importa
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+.album-editor {
+  grid-column: 1 / -1;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: #faf8fb;
+}
+
+.album-editor h3 {
+  margin: 0 0 5px;
+  color: var(--p);
+}
+
+.album-editor > p {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.album-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.album-editor-item {
+  min-width: 0;
+  padding: 7px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.album-editor-item.is-cover {
+  border-color: var(--lime);
+}
+
+.album-editor-item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.album-editor-item small {
+  display: block;
+  margin: 5px 0;
+  color: var(--muted);
+}
+
+.album-editor-item button {
+  width: 100%;
+  min-height: 32px;
+  margin-top: 5px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--p);
+  font-size: .75rem;
+  font-weight: 800;
+}
+
+.album-editor-item button:disabled {
+  cursor: default;
+  opacity: .7;
+}
+
+@media (max-width: 620px) {
+  .album-editor-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 </style>
 </head>
 <body>
@@ -622,27 +696,25 @@ function projectEditModal(project){
           </select>
         </div>
 
-        <div class="field">
-          <label>Imagem de capa</label>
-          <input
-            class="input"
-            name="capa"
-            type="file"
-            accept="image/*">
+        <div class="album-editor">
+  <h3>Álbum do projeto</h3>
+  <p>Adicione fotos e escolha uma delas como capa.</p>
 
-          <button
-            type="button"
-            class="btn btn-ghost full"
-            data-action="remove-project-cover">
-            Remover imagem atual
-          </button>
+  <label for="edit-project-images" class="btn btn-secondary">
+    + Adicionar fotos
+  </label>
 
-          <img
-            id="edit-cover-preview"
-            class="cover-preview ${project.imagem_capa_url?"":"hidden"}"
-            src="${esc(project.imagem_capa_url||"")}"
-            alt="Pré-visualização">
-        </div>
+  <input
+    id="edit-project-images"
+    class="hidden"
+    type="file"
+    accept="image/*"
+    multiple>
+
+  <div id="edit-project-album" class="album-editor-grid">
+    <p class="muted">Carregando imagens...</p>
+  </div>
+</div>
       </div>
 
       <p id="edit-project-message" class="message"></p>
@@ -664,17 +736,116 @@ function projectEditModal(project){
     </form>
   `);
 
-  document
-    .querySelector('#edit-project-form [name="capa"]')
-    ?.addEventListener("change",e=>{
-      const file=e.target.files?.[0];
-      const img=document.getElementById("edit-cover-preview");
+ setupProjectAlbumEditor(project);
+}
 
-      if(file&&img){
-        img.src=URL.createObjectURL(file);
-        img.classList.remove("hidden");
-      }
+let editingProjectAlbum=null;
+
+async function setupProjectAlbumEditor(project){
+  const response=await supabaseClient
+    .from("project_images")
+    .select("id,arquivo_url,ordem")
+    .eq("project_id",project.id)
+    .order("ordem",{ascending:true});
+
+  const container=document.getElementById("edit-project-album");
+  if(!container)return;
+
+  if(response.error){
+    container.innerHTML=
+      `<p class="message">Não foi possível carregar o álbum.</p>`;
+    console.error(response.error);
+    return;
+  }
+
+  const saved=(response.data||[]).map(image=>({
+    id:image.id,
+    url:image.arquivo_url,
+    file:null,
+    removed:false
+  }));
+
+  if(
+    project.imagem_capa_url &&
+    !saved.some(image=>image.url===project.imagem_capa_url)
+  ){
+    saved.unshift({
+      id:null,
+      url:project.imagem_capa_url,
+      file:null,
+      removed:false
     });
+  }
+
+  editingProjectAlbum={
+    projectId:String(project.id),
+    images:saved,
+    coverUrl:project.imagem_capa_url||saved[0]?.url||null
+  };
+
+  renderProjectAlbumEditor();
+
+  document
+    .getElementById("edit-project-images")
+    ?.addEventListener("change",event=>{
+      const files=[...event.target.files]
+        .filter(file=>file.type.startsWith("image/"));
+
+      for(const file of files){
+        editingProjectAlbum.images.push({
+          id:null,
+          url:URL.createObjectURL(file),
+          file,
+          removed:false
+        });
+      }
+
+      if(!editingProjectAlbum.coverUrl && files.length){
+        editingProjectAlbum.coverUrl=
+          editingProjectAlbum.images.at(-files.length).url;
+      }
+
+      event.target.value="";
+      renderProjectAlbumEditor();
+    });
+}
+
+function renderProjectAlbumEditor(){
+  const album=editingProjectAlbum;
+  const container=document.getElementById("edit-project-album");
+  if(!album||!container)return;
+
+  const visible=album.images
+    .map((image,index)=>({...image,index}))
+    .filter(image=>!image.removed);
+
+  container.innerHTML=visible.length
+    ?visible.map(image=>`
+      <div class="album-editor-item
+                  ${image.url===album.coverUrl?"is-cover":""}">
+        <img src="${esc(image.url)}"
+             alt="Imagem do projeto">
+
+        <small>
+          ${image.url===album.coverUrl?"Capa atual":"Foto do álbum"}
+        </small>
+
+        ${
+          image.url!==album.coverUrl
+            ? `<button type="button"
+                       data-album-cover="${image.index}">
+                 Usar como capa
+               </button>`
+            : ""
+        }
+
+        <button type="button"
+                data-album-remove="${image.index}">
+          Remover
+        </button>
+      </div>
+    `).join("")
+    :`<p class="muted">Nenhuma imagem adicionada.</p>`;
 }
 
 async function saveProjectEdit(e){
@@ -686,10 +857,18 @@ async function saveProjectEdit(e){
     x=>String(x.id)===String(id)
   );
   const message=document.getElementById("edit-project-message");
+  const album=editingProjectAlbum;
 
   if(!project||!state.user||
      String(project.autora_id)!==String(state.user.id)){
-    message.textContent="Você não tem permissão para editar este projeto.";
+    message.textContent=
+      "Você não tem permissão para editar este projeto.";
+    return;
+  }
+
+  if(!album||album.projectId!==String(id)){
+    message.textContent=
+      "O álbum ainda não carregou. Aguarde e tente novamente.";
     return;
   }
 
@@ -697,26 +876,59 @@ async function saveProjectEdit(e){
   button.disabled=true;
 
   try{
-    let imagem_capa_url=project.imagem_capa_url||null;
+    let ordem=0;
 
-    if(form.dataset.removeCover==="true"){
-      imagem_capa_url=null;
+    for(const image of album.images){
+      if(image.removed||!image.file)continue;
+
+      const uploadedUrl=await uploadProjectCover(image.file);
+
+      const result=await supabaseClient
+        .from("project_images")
+        .insert({
+          project_id:id,
+          uploaded_by:state.user.id,
+          arquivo_url:uploadedUrl,
+          ordem:ordem++
+        })
+        .select("id")
+        .single();
+
+      if(result.error)throw result.error;
+
+      if(album.coverUrl===image.url){
+        album.coverUrl=uploadedUrl;
+      }
+
+      URL.revokeObjectURL(image.url);
+      image.url=uploadedUrl;
+      image.id=result.data.id;
+      image.file=null;
     }
 
-    if(form.elements.capa.files?.[0]){
-      imagem_capa_url=await uploadProjectCover(
-        form.elements.capa.files[0]
-      );
+    for(const image of album.images){
+      if(!image.removed||!image.id)continue;
+
+      const result=await supabaseClient
+        .from("project_images")
+        .delete()
+        .eq("id",image.id)
+        .eq("project_id",id);
+
+      if(result.error)throw result.error;
     }
 
-    const r=await supabaseClient
+    const imagem_capa_url=album.coverUrl||null;
+
+    const result=await supabaseClient
       .from("projects")
       .update({
         titulo:form.elements.titulo.value.trim(),
         descricao:form.elements.descricao.value.trim(),
         objetivo:form.elements.objetivo.value.trim()||null,
         area:form.elements.area.value.trim()||"Não informada",
-        tipo_participacao:form.elements.tipo_participacao.value,
+        tipo_participacao:
+          form.elements.tipo_participacao.value,
         imagem_capa_url
       })
       .eq("id",id)
@@ -724,19 +936,20 @@ async function saveProjectEdit(e){
       .select()
       .single();
 
-    if(r.error)throw r.error;
+    if(result.error)throw result.error;
 
+    editingProjectAlbum=null;
     closeModal();
     await loadData();
     await goPage(state.page);
-    showToast("Projeto atualizado com sucesso.");
+    showToast("Projeto e álbum atualizados.");
   }catch(error){
+    console.error("Erro ao salvar projeto/álbum:",error);
     message.textContent=authError(error);
   }finally{
     button.disabled=false;
   }
 }
-
 async function deleteProject(project){
   if(!project||!state.user||
      String(project.autora_id)!==String(state.user.id)){
@@ -876,6 +1089,40 @@ document.addEventListener("submit",e=>{
 });
 
 document.addEventListener("click",e=>{
+  const coverButton=e.target.closest("[data-album-cover]");
+  const removeButton=e.target.closest("[data-album-remove]");
+
+  if(coverButton && editingProjectAlbum){
+    const image=editingProjectAlbum.images[
+      Number(coverButton.dataset.albumCover)
+    ];
+
+    if(image && !image.removed){
+      editingProjectAlbum.coverUrl=image.url;
+      renderProjectAlbumEditor();
+    }
+
+    return;
+  }
+
+  if(removeButton && editingProjectAlbum){
+    const image=editingProjectAlbum.images[
+      Number(removeButton.dataset.albumRemove)
+    ];
+
+    if(image){
+      image.removed=true;
+
+      if(editingProjectAlbum.coverUrl===image.url){
+        editingProjectAlbum.coverUrl=
+          editingProjectAlbum.images.find(x=>!x.removed)?.url||null;
+      }
+
+      renderProjectAlbumEditor();
+    }
+
+    return;
+  }
   const p=e.target.closest("[data-page]");
   const a=e.target.closest("[data-action]");
   const o=e.target.closest("[data-oauth]");
@@ -933,18 +1180,6 @@ document.addEventListener("click",e=>{
 
     if(n==="toggle-like"){
       toggleProjectLike(a.dataset.project);
-    }
-
-    if(n==="remove-project-cover"){
-      const form=document.getElementById("edit-project-form");
-
-      if(form){
-        form.dataset.removeCover="true";
-
-        document
-          .getElementById("edit-cover-preview")
-          ?.classList.add("hidden");
-      }
     }
 
     if(n==="edit-profile")profileModal();
