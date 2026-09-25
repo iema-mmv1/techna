@@ -1711,6 +1711,277 @@ supabaseClient.auth.onAuthStateChange((_e,s)=>{
   const r=await supabaseClient.auth.getSession();
   await finishSession(r.data?.session||null);
 })();
+
+/* TECHNA — central de notificações */
+const technaBellStyle=document.createElement("style");
+technaBellStyle.textContent=`
+  .techna-bell-button{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center
+  }
+  .techna-bell-button svg{
+    width:23px;
+    height:23px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:2;
+    stroke-linecap:round;
+    stroke-linejoin:round
+  }
+  .techna-bell-count{
+    position:absolute;
+    top:-5px;
+    right:-7px;
+    min-width:19px;
+    height:19px;
+    padding:0 4px;
+    border-radius:999px;
+    background:#e63858;
+    color:#fff;
+    font-size:11px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center
+  }
+  .techna-bell-count[hidden]{
+    display:none
+  }
+  .techna-notification{
+    display:block;
+    width:100%;
+    text-align:left;
+    padding:14px;
+    margin:8px 0;
+    border:1px solid #e5e1ea;
+    border-radius:12px;
+    background:#fff;
+    color:inherit;
+    cursor:pointer
+  }
+  .techna-notification:not(.is-read){
+    background:#f3f9e3;
+    border-color:#acd215
+  }
+  .techna-notification strong,
+  .techna-notification span,
+  .techna-notification small{
+    display:block
+  }
+  .techna-notification span{
+    margin-top:5px;
+    line-height:1.4
+  }
+  .techna-notification small{
+    margin-top:7px;
+    color:#686473
+  }
+  .techna-notification-list{
+    max-height:65vh;
+    overflow-y:auto
+  }
+`;
+document.head.appendChild(technaBellStyle);
+
+const technaBellSvg=`
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18
+             c0-2-3-2-3-9"></path>
+    <path d="M10 21h4"></path>
+  </svg>
+  <span class="techna-bell-count" hidden></span>
+`;
+
+function technaPrepareBell(){
+  const button=document.querySelector(
+    '[data-action="notifications"]'
+  );
+
+  if(!button)return null;
+
+  if(!button.classList.contains("techna-bell-button")){
+    button.classList.add("techna-bell-button");
+    button.innerHTML=technaBellSvg;
+    button.setAttribute("aria-label","Abrir notificações");
+    button.setAttribute("title","Notificações");
+  }
+
+  return button;
+}
+
+async function technaRefreshBell(){
+  const button=technaPrepareBell();
+
+  if(!button||!state.user)return;
+
+  const userId=state.user.id;
+
+  const result=await supabaseClient
+    .from("notifications")
+    .select("id",{count:"exact",head:true})
+    .eq("user_id",userId)
+    .eq("lida",false);
+
+  if(result.error){
+    console.error(
+      "Erro ao contar notificações:",
+      result.error
+    );
+    return;
+  }
+
+  if(state.user?.id!==userId)return;
+
+  const currentButton=technaPrepareBell();
+  const badge=currentButton?.querySelector(
+    ".techna-bell-count"
+  );
+
+  if(!badge)return;
+
+  const count=result.count||0;
+
+  badge.hidden=count===0;
+  badge.textContent=count>99?"99+":String(count);
+
+  currentButton.setAttribute(
+    "aria-label",
+    count
+      ?`${count} notificações não lidas`
+      :"Abrir notificações"
+  );
+}
+
+async function technaOpenNotifications(){
+  if(!state.user)return;
+
+  const userId=state.user.id;
+
+  openModal(
+    "Notificações",
+    '<div id="techna-notification-list" '+
+    'class="techna-notification-list">'+
+    '<p class="muted">Carregando notificações...</p>'+
+    '</div>'
+  );
+
+  const container=document.getElementById(
+    "techna-notification-list"
+  );
+
+  const result=await supabaseClient
+    .from("notifications")
+    .select(
+      "id,tipo,titulo,mensagem,entity_type,"+
+      "entity_id,lida,created_at"
+    )
+    .eq("user_id",userId)
+    .order("created_at",{ascending:false})
+    .limit(50);
+
+  if(!container?.isConnected||
+     state.user?.id!==userId)return;
+
+  if(result.error){
+    console.error(
+      "Erro ao carregar notificações:",
+      result.error
+    );
+
+    container.innerHTML=
+      '<p class="message">'+
+      'Não foi possível carregar as notificações.'+
+      '</p>';
+
+    return;
+  }
+
+  const notifications=result.data||[];
+
+  container.innerHTML=notifications.length
+    ?notifications.map(item=>`
+      <button
+        type="button"
+        class="techna-notification
+               ${item.lida?"is-read":""}"
+        data-techna-notification-id="${esc(item.id)}"
+        data-techna-entity-type="${esc(item.entity_type||"")}"
+        data-techna-entity-id="${esc(item.entity_id||"")}">
+        <strong>
+          ${esc(item.titulo||"Notificação")}
+        </strong>
+        <span>
+          ${esc(item.mensagem||"")}
+        </span>
+        <small>
+          ${new Date(item.created_at).toLocaleString("pt-BR")}
+          ${item.lida?" · Lida":" · Nova"}
+        </small>
+      </button>
+    `).join("")
+    :'<p class="muted">'+
+     'Você ainda não tem notificações.'+
+     '</p>';
+}
+
+document.addEventListener("click",async event=>{
+  const notification=event.target.closest(
+    "[data-techna-notification-id]"
+  );
+
+  if(notification){
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    if(!state.user)return;
+
+    const id=notification.dataset.technaNotificationId;
+    const entityType=notification.dataset.technaEntityType;
+    const entityId=notification.dataset.technaEntityId;
+
+    const result=await supabaseClient
+      .from("notifications")
+      .update({lida:true})
+      .eq("id",id)
+      .eq("user_id",state.user.id);
+
+    if(result.error){
+      console.error(result.error);
+      showToast(
+        "Não foi possível marcar a notificação como lida."
+      );
+      return;
+    }
+
+    await technaRefreshBell();
+
+    if(entityType==="project"&&entityId){
+      closeModal();
+      await loadData();
+      await openProject(entityId);
+    }else{
+      await technaOpenNotifications();
+    }
+
+    return;
+  }
+
+  const bell=event.target.closest(
+    '[data-action="notifications"]'
+  );
+
+  if(bell){
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    await technaOpenNotifications();
+  }
+},true);
+
+technaPrepareBell();
+technaRefreshBell();
+setInterval(technaRefreshBell,15000);
 </script>
 </body>
 </html>
