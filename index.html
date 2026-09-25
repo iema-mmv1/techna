@@ -1135,9 +1135,9 @@ document.addEventListener("click",e=>{
     goPage(p.dataset.page);
   }
 
-  if(project&&!projectNews){
-    openProject(project.dataset.project);
-  }
+  if(project&&!projectNews&&!a){
+  openProject(project.dataset.project);
+}
 
   if(projectNews){
     openProject(projectNews.dataset.projectNews);
