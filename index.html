@@ -484,7 +484,7 @@ button:disabled {
   display: none;
 }
 
-/* Cards and content */
+/* Conteúdo */
 
 .card {
   padding: 21px;
@@ -696,7 +696,7 @@ button:disabled {
   height: 84px;
 }
 
-/* Modals */
+/* Modais */
 
 .modal-bg {
   position: fixed;
@@ -705,15 +705,15 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 12px;
   overflow: hidden;
   background: #32104799;
 }
 
 .modal {
   width: min(100%, 900px);
-  max-height: calc(100dvh - 32px);
-  padding: 24px;
+  max-height: calc(100dvh - 24px);
+  padding: 20px;
   overflow-y: auto;
   overflow-x: hidden;
   border-radius: 22px;
@@ -724,7 +724,7 @@ button:disabled {
 .modal-head {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .close {
@@ -740,7 +740,7 @@ button:disabled {
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 12px;
 }
 
 .span-2 {
@@ -750,12 +750,12 @@ button:disabled {
 .role-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 16px 0;
+  gap: 8px;
+  margin: 12px 0;
 }
 
 .role {
-  padding: 13px;
+  padding: 11px;
   text-align: left;
   border: 1px solid var(--line);
   border-radius: 11px;
@@ -767,34 +767,26 @@ button:disabled {
   background: var(--lime2);
 }
 
-.role strong,
-.role small {
-  display: block;
-}
-
-.role small {
-  margin-top: 4px;
-  color: var(--muted);
-}
-
 .steps {
   display: grid;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 6px;
+  max-height: 130px;
+  margin-top: 8px;
+  overflow: hidden;
 }
 
 .step {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px;
+  gap: 8px;
+  padding: 9px;
   border: 1px solid var(--line);
   border-radius: 11px;
 }
 
 .step input {
-  width: 19px;
-  height: 19px;
+  width: 18px;
+  height: 18px;
   accent-color: #8daa00;
 }
 
@@ -802,28 +794,24 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: 12px;
   background: #f7f2f8;
 }
 
-.roadmap-summary strong {
-  color: var(--p);
-}
-
 .cover-preview {
   width: 100%;
-  max-height: 190px;
-  margin-top: 8px;
+  max-height: 120px;
+  margin-top: 6px;
   object-fit: cover;
   border-radius: 12px;
 }
 
 .detail-cover {
   width: 100%;
-  max-height: 240px;
+  height: clamp(90px, 24vh, 220px);
   min-height: 0;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   object-fit: contain;
   object-position: center;
   border-radius: 15px;
@@ -833,16 +821,22 @@ button:disabled {
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 18px;
+  gap: 12px;
+}
+
+.update-list,
+.comments-list {
+  max-height: 120px;
+  overflow: hidden;
 }
 
 .update-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .update-item {
-  padding: 14px;
+  padding: 10px;
   border-left: 4px solid var(--lime);
   border-radius: 10px;
   background: #f8f3f9;
@@ -861,23 +855,32 @@ button:disabled {
 .profile-avatar-editor {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding-bottom: 20px;
-  margin-bottom: 20px;
+  gap: 14px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
   border-bottom: 1px solid var(--line);
 }
 
 .profile-avatar-editor .avatar {
-  width: 100px;
-  height: 100px;
+  width: 84px;
+  height: 84px;
 }
 
 .profile-actions,
 .project-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.modal .field {
+  margin-bottom: 8px;
+}
+
+.modal .textarea {
+  min-height: 60px;
+  max-height: 100px;
 }
 
 /* Interações */
@@ -885,15 +888,15 @@ button:disabled {
 .project-interactions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
-  padding-top: 14px;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--line);
 }
 
 .interaction-btn {
-  min-height: 38px;
-  padding: 8px 12px;
+  min-height: 36px;
+  padding: 7px 11px;
   border: 1px solid var(--line);
   border-radius: 10px;
   color: var(--p);
@@ -909,24 +912,17 @@ button:disabled {
 
 .interaction-count {
   color: var(--muted);
-  font-size: .82rem;
+  font-size: .8rem;
 }
 
 .comments-box {
   display: grid;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.comments-list {
-  display: grid;
   gap: 8px;
-  max-height: 180px;
-  overflow: auto;
+  margin-top: 12px;
 }
 
 .comment-item {
-  padding: 11px;
+  padding: 9px;
   border-radius: 11px;
   background: #f8f3f9;
 }
@@ -937,13 +933,13 @@ button:disabled {
 }
 
 .comment-item small {
-  margin-top: 4px;
+  margin-top: 3px;
   color: var(--muted);
 }
 
 .participation-box {
-  margin-top: 18px;
-  padding-top: 16px;
+  margin-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--line);
 }
 
@@ -1083,14 +1079,14 @@ button:disabled {
   }
 
   .login-art {
-    min-height: 300px;
-    height: 300px;
-    padding: 24px;
+    min-height: 260px;
+    height: 260px;
+    padding: 22px;
   }
 
   .login-panel {
-    min-height: calc(100dvh - 300px);
-    padding: 32px 24px 40px;
+    min-height: calc(100dvh - 260px);
+    padding: 26px 20px 32px;
   }
 
   .layout {
@@ -1140,19 +1136,18 @@ button:disabled {
   }
 
   .modal-bg {
-    align-items: flex-start;
-    padding: 10px;
+    align-items: center;
+    padding: 8px;
   }
 
   .modal {
     width: 100%;
-    max-height: calc(100dvh - 20px);
-    padding: 18px;
-    border-radius: 18px;
+    max-height: calc(100dvh - 16px);
+    padding: 16px;
   }
 
   .detail-cover {
-    max-height: 180px;
+    height: clamp(80px, 18vh, 160px);
   }
 }
 
@@ -1186,32 +1181,27 @@ button:disabled {
   }
 
   .login-art {
-    min-height: 240px;
-    height: 240px;
-    padding: 20px;
+    min-height: 220px;
+    height: 220px;
+    padding: 18px;
   }
 
   .login-panel {
-    min-height: calc(100dvh - 240px);
-    padding: 24px 18px 36px;
+    min-height: calc(100dvh - 220px);
+    padding: 22px 16px 28px;
   }
 
   .auth h2 {
     font-size: clamp(1.7rem, 8vw, 2.3rem);
   }
 
-  .modal-bg {
-    padding: 8px;
-  }
-
   .modal {
-    max-height: calc(100dvh - 16px);
-    padding: 16px;
-    border-radius: 16px;
+    max-height: calc(100dvh - 12px);
+    padding: 14px;
   }
 
   .detail-cover {
-    max-height: 140px;
+    height: 100px;
   }
 }
 </style>
