@@ -1180,12 +1180,13 @@ async function requestProjectParticipation(e){
   const form=e.target;
   const projectId=form.dataset.project;
 
-  const result=await supabaseClient
+    const result=await supabaseClient
     .from("project_participation_requests")
     .insert({
       project_id:projectId,
       requester_id:state.user.id,
-      mensagem:form.elements.mensagem.value.trim()||null
+      mensagem:form.elements.mensagem.value.trim()||null,
+      status:"pendente"
     });
 
   if(result.error){
