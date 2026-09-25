@@ -495,6 +495,16 @@ async function openProject(id){
     </section>
 
     ${projectInteractionsHtml(p,interactions,participant)}
+    ${
+      owner
+        ? `<section class="project-section">
+             <h3>Solicitações de participação</h3>
+             <div id="project-pending-requests">
+               <p class="muted">Carregando solicitações...</p>
+             </div>
+           </section>`
+        : ""
+    }
 
     ${
       owner
@@ -521,7 +531,124 @@ async function openProject(id){
            </section>`
         : ""
     }
-  `);
+    `);
+
+  if(owner){
+    await loadPendingProjectRequests(id);
+  }
+}
+async function loadPendingProjectRequests(projectId){
+  const container=document.getElementById(
+    "project-pending-requests"
+  );
+  if(!container)return;
+
+  const result=await supabaseClient
+    .from("project_participation_requests")
+    .select("id,requester_id,mensagem,created_at")
+    .eq("project_id",projectId)
+    .eq("status","pendente")
+    .order("created_at",{ascending:true});
+
+  if(!container.isConnected)return;
+
+  if(result.error){
+    console.error("Erro ao carregar solicitações:",result.error);
+    container.innerHTML=
+      `<p class="message">
+        Não foi possível carregar as solicitações.
+      </p>`;
+    return;
+  }
+
+  const requests=result.data||[];
+
+  if(!requests.length){
+    container.innerHTML=
+      `<p class="muted">Nenhuma solicitação pendente.</p>`;
+    return;
+  }
+
+  const ids=[...new Set(
+    requests.map(request=>request.requester_id)
+  )];
+
+  const profilesResult=await supabaseClient
+    .from("profiles")
+    .select("id,nome,username,foto_url")
+    .in("id",ids);
+
+  if(!container.isConnected)return;
+
+  if(profilesResult.error){
+    console.error(
+      "Erro ao carregar solicitantes:",
+      profilesResult.error
+    );
+    container.innerHTML=
+      `<p class="message">
+        Não foi possível carregar os solicitantes.
+      </p>`;
+    return;
+  }
+
+  const profileById=new Map(
+    (profilesResult.data||[]).map(profile=>[
+      String(profile.id),
+      profile
+    ])
+  );
+
+  container.innerHTML=requests.map(request=>{
+    const profile=profileById.get(
+      String(request.requester_id)
+    );
+    const name=profile?.nome||
+               profile?.username||
+               "Usuário";
+
+    return `
+      <article class="participation-request">
+        <span class="project-person-avatar">
+          ${
+            profile?.foto_url
+              ? `<img src="${esc(profile.foto_url)}"
+                      alt="Foto de ${esc(name)}">`
+              : esc(initials(name))
+          }
+        </span>
+
+        <div class="participation-request-info">
+          <strong>${esc(name)}</strong>
+          ${
+            request.mensagem
+              ? `<p>${esc(request.mensagem)}</p>`
+              : `<p class="muted">Sem mensagem.</p>`
+          }
+        </div>
+
+        <div class="participation-request-actions">
+          <button type="button"
+                  class="btn btn-primary"
+                  data-action="decide-participation"
+                  data-request-id="${esc(request.id)}"
+                  data-project-id="${esc(projectId)}"
+                  data-decision="aceita">
+            Aceitar
+          </button>
+
+          <button type="button"
+                  class="btn btn-ghost"
+                  data-action="decide-participation"
+                  data-request-id="${esc(request.id)}"
+                  data-project-id="${esc(projectId)}"
+                  data-decision="recusada">
+            Recusar
+          </button>
+        </div>
+      </article>
+    `;
+  }).join("");
 }
 async function loadProjectInteractions(projectId){
   const [likes,comments,request]=await Promise.all([
@@ -1413,7 +1540,7 @@ document.addEventListener("submit",e=>{
   if(e.target.id==="participation-form")requestProjectParticipation(e);
 });
 
-document.addEventListener("click",e=>{
+document.addEventListener("click",async e=>{
   const coverButton=e.target.closest("[data-album-cover]");
   const removeButton=e.target.closest("[data-album-remove]");
 
@@ -1482,7 +1609,48 @@ document.addEventListener("click",e=>{
 
   if(a){
     const n=a.dataset.action;
+    
+    if(n==="decide-participation"){
+      const requestId=a.dataset.requestId;
+      const projectId=a.dataset.projectId;
+      const decision=a.dataset.decision;
 
+      if(!requestId || !projectId)return;
+
+      const buttons=[
+        ...document.querySelectorAll(
+          `[data-request-id="${requestId}"]`
+        )
+      ];
+
+      buttons.forEach(button=>button.disabled=true);
+
+      const result=await supabaseClient.rpc(
+        "decidir_participacao",
+        {
+          p_request_id:requestId,
+          p_decisao:decision
+        }
+      );
+
+      if(result.error){
+        console.error(result.error);
+        showToast(authError(result.error));
+        buttons.forEach(button=>button.disabled=false);
+        return;
+      }
+
+      showToast(
+        decision==="aceita"
+          ?"Participação aceita."
+          :"Participação recusada."
+      );
+
+      await openProject(projectId);
+      return;
+    }
+
+    
     if(n==="create-account")registerModal();
     if(n==="forgot-password")openForgot();
     if(n==="new-project")projectModal();
