@@ -38,6 +38,70 @@ O conteúdo do projeto permanece visível ao lado.
   background:var(--danger);
   border-color:var(--danger);
 }
+.project-interactions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid var(--line);
+}
+
+.interaction-btn{
+  min-height:38px;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  color:var(--p);
+  background:#fff;
+  font-weight:800;
+}
+
+.interaction-btn.active{
+  color:#263000;
+  background:var(--lime);
+  border-color:#8daa00;
+}
+
+.interaction-count{
+  color:var(--muted);
+  font-size:.82rem;
+}
+
+.comments-box{
+  display:grid;
+  gap:10px;
+  margin-top:18px;
+}
+
+.comments-list{
+  display:grid;
+  gap:8px;
+  max-height:260px;
+  overflow:auto;
+}
+
+.comment-item{
+  padding:11px;
+  border-radius:11px;
+  background:#f8f3f9;
+}
+
+.comment-item strong,
+.comment-item small{
+  display:block;
+}
+
+.comment-item small{
+  margin-top:4px;
+  color:var(--muted);
+}
+
+.participation-box{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid var(--line);
+}
 </style>
 </head>
 <body>
@@ -59,6 +123,7 @@ async function openProject(id){
   if(!p)return;
 
   let updates=[];
+
   if(state.user){
     const r=await supabaseClient
       .from("project_updates")
@@ -68,6 +133,8 @@ async function openProject(id){
 
     if(!r.error)updates=r.data||[];
   }
+
+  const interactions=await loadProjectInteractions(id);
 
   const owner=Boolean(
     state.user &&
@@ -84,6 +151,7 @@ async function openProject(id){
     <div class="detail-grid">
       <div>
         <p>${esc(p.descricao)}</p>
+
         <p class="muted">
           Área: ${esc(p.area||"Não informada")}
           · Status: ${esc(p.status||"planejamento")}
@@ -120,13 +188,16 @@ async function openProject(id){
 
       <div>
         <h3>Atualizações</h3>
+
         <div class="update-list">
           ${
             updates.length
             ?updates.map(u=>`
               <article class="update-item">
                 <h3>${esc(u.titulo||"Atualização do projeto")}</h3>
+
                 <p>${esc(u.descricao||"")}</p>
+
                 <small class="muted">
                   ${new Date(u.created_at).toLocaleString("pt-BR")}
                 </small>
@@ -138,11 +209,15 @@ async function openProject(id){
       </div>
     </div>
 
+    ${projectInteractionsHtml(p,interactions)}
+
     ${owner?`
       <hr>
+
       <form id="update-project-form" data-project="${esc(id)}">
         <div class="field">
           <label>Nova atualização</label>
+
           <input
             class="input"
             name="titulo"
@@ -164,6 +239,127 @@ async function openProject(id){
       </form>
     `:""}
   `);
+}
+async function loadProjectInteractions(projectId){
+  const [likes,comments,request]=await Promise.all([
+    supabaseClient
+      .from("project_likes")
+      .select("user_id")
+      .eq("project_id",projectId),
+
+    supabaseClient
+      .from("project_comments")
+      .select("*,profiles(nome)")
+      .eq("project_id",projectId)
+      .eq("status","publicado")
+      .order("created_at",{ascending:false}),
+
+    state.user
+      ?supabaseClient
+        .from("project_participation_requests")
+        .select("*")
+        .eq("project_id",projectId)
+        .eq("requester_id",state.user.id)
+        .maybeSingle()
+      :Promise.resolve({data:null,error:null})
+  ]);
+
+  return {
+    likes:likes.error?[]:(likes.data||[]),
+    comments:comments.error?[]:(comments.data||[]),
+    request:request.error?null:request.data
+  };
+}
+
+function projectInteractionsHtml(project,interactions){
+  const liked=Boolean(
+    state.user &&
+    interactions.likes.some(x=>String(x.user_id)===String(state.user.id))
+  );
+
+  const request=interactions.request;
+  const owner=Boolean(
+    state.user &&
+    String(project.autora_id)===String(state.user.id)
+  );
+
+  return `
+    <section class="project-interactions" data-interactions="${esc(project.id)}">
+      <button
+        type="button"
+        class="interaction-btn ${liked?"active":""}"
+        data-action="toggle-like"
+        data-project="${esc(project.id)}">
+        ${liked?"♥ Curtido":"♡ Curtir"}
+      </button>
+
+      <span class="interaction-count">
+        ${interactions.likes.length} curtida(s)
+      </span>
+    </section>
+
+    ${
+      !owner && project.tipo_participacao==="aberto"
+      ?`
+        <section class="participation-box">
+          <h3>Participar do projeto</h3>
+          ${
+            request
+            ?`<p class="muted">Pedido: <strong>${esc(request.status)}</strong></p>`
+            :`
+              <form id="participation-form" data-project="${esc(project.id)}">
+                <div class="field">
+                  <textarea
+                    class="textarea"
+                    name="mensagem"
+                    placeholder="Escreva uma mensagem opcional"></textarea>
+                </div>
+                <button class="btn btn-secondary" type="submit">
+                  Pedir participação
+                </button>
+              </form>
+            `
+          }
+        </section>
+      `
+      :""
+    }
+
+    <section class="comments-box">
+      <h3>Comentários</h3>
+
+      <div class="comments-list">
+        ${
+          interactions.comments.length
+          ?interactions.comments.map(c=>`
+            <article class="comment-item">
+              <strong>${esc(c.profiles?.nome||"Usuário")}</strong>
+              <span>${esc(c.conteudo)}</span>
+              <small>${new Date(c.created_at).toLocaleString("pt-BR")}</small>
+            </article>
+          `).join("")
+          :`<p class="muted">Ainda não há comentários.</p>`
+        }
+      </div>
+
+      ${
+        state.user
+        ?`
+          <form id="comment-form" data-project="${esc(project.id)}">
+            <textarea
+              class="textarea"
+              name="conteudo"
+              placeholder="Escreva um comentário"
+              required></textarea>
+            <button class="btn btn-primary full" type="submit">
+              Comentar
+            </button>
+          </form>
+        `
+        :`<p class="muted">Entre para comentar.</p>`
+      }
+    </section>
+  `;
 }
 function registerModal(){openModal("Criar conta",`<form id="account-form"><div class="form-grid"><div class="field span-2"><label>Nome completo</label><input class="input" name="nome" required></div><div class="field span-2"><label>Username</label><input class="input" name="username" required></div><div class="field"><label>E-mail</label><input class="input" type="email" name="email" required></div><div class="field"><label>Senha</label><input class="input" type="password" name="password" minlength="6" required></div><div class="field span-2"><label>Tipo de conta</label><div class="role-grid"><button type="button" class="role selected" data-role="aluno"><strong>Aluno</strong></button><button type="button" class="role" data-role="professor"><strong>Professor</strong></button></div><input type="hidden" name="tipo" value="aluno"></div><div class="field span-2" id="courseField"><label>Curso</label><select class="select" name="curso"><option value="">Escolha seu curso</option><option>Marketing</option><option>Administração</option><option>Informática</option></select></div></div><p id="account-message" class="message"></p><button type="submit" class="btn btn-primary full">Criar conta</button></form>`);document.querySelectorAll("[data-role]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-role]").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");document.querySelector('[name="tipo"]').value=b.dataset.role;document.getElementById("courseField").classList.toggle("hidden",b.dataset.role!=="aluno")})}function googleProfileModal(){openModal("Complete seu cadastro",`<form id="google-profile-form"><div class="field"><label>Nome</label><input class="input" name="nome" value="${esc(state.user?.user_metadata?.full_name||"")}" required></div><div class="field"><label>Username</label><input class="input" name="username" required></div><div class="field"><label>Curso</label><select class="select" name="curso"><option value="">Escolha seu curso</option><option>Marketing</option><option>Administração</option><option>Informática</option></select></div><p id="google-profile-message" class="message"></p><button class="btn btn-primary full">Salvar perfil e entrar</button></form>`)}function openForgot(){openModal("Recuperar acesso",`<form id="forgot-form"><label>E-mail</label><input class="input" id="forgot-email" type="email" required><p id="forgot-message" class="message"></p><button class="btn btn-primary full">Enviar instruções</button></form>`)}
 function projectEditModal(project){
@@ -361,39 +557,222 @@ async function deleteProject(project){
   await goPage(state.page);
   showToast("Projeto excluído.");
 }
+async function toggleProjectLike(projectId){
+  if(!state.user){
+    showToast("Entre para curtir projetos.");
+    return;
+  }
+
+  const existing=await supabaseClient
+    .from("project_likes")
+    .select("id")
+    .eq("project_id",projectId)
+    .eq("user_id",state.user.id)
+    .maybeSingle();
+
+  if(existing.error){
+    showToast(authError(existing.error));
+    return;
+  }
+
+  const result=existing.data
+    ?await supabaseClient
+      .from("project_likes")
+      .delete()
+      .eq("id",existing.data.id)
+    :await supabaseClient
+      .from("project_likes")
+      .insert({
+        project_id:projectId,
+        user_id:state.user.id
+      });
+
+  if(result.error){
+    showToast(authError(result.error));
+    return;
+  }
+
+  await openProject(projectId);
+}
+
+async function createProjectComment(e){
+  e.preventDefault();
+
+  if(!state.user)return;
+
+  const form=e.target;
+  const projectId=form.dataset.project;
+  const conteudo=form.elements.conteudo.value.trim();
+
+  if(!conteudo)return;
+
+  const result=await supabaseClient
+    .from("project_comments")
+    .insert({
+      project_id:projectId,
+      author_id:state.user.id,
+      conteudo,
+      status:"publicado"
+    });
+
+  if(result.error){
+    showToast(authError(result.error));
+    return;
+  }
+
+  await openProject(projectId);
+}
+
+async function requestProjectParticipation(e){
+  e.preventDefault();
+
+  if(!state.user)return;
+
+  const form=e.target;
+  const projectId=form.dataset.project;
+
+  const result=await supabaseClient
+    .from("project_participation_requests")
+    .insert({
+      project_id:projectId,
+      requester_id:state.user.id,
+      mensagem:form.elements.mensagem.value.trim()||null
+    });
+
+  if(result.error){
+    showToast(authError(result.error));
+    return;
+  }
+
+  showToast("Pedido de participação enviado.");
+  await openProject(projectId);
+}
 function profileModal(){const p=state.profile||{},email=state.user?.email||"";openModal("Editar meu perfil",`<form id="profile-form"><div class="profile-avatar-editor">${avatar(p,true)}<div><strong>Imagem do perfil</strong><p class="muted">Escolha uma imagem para aparecer no seu perfil.</p><input class="input" type="file" name="foto" accept="image/*"><img id="profile-preview" class="cover-preview hidden" alt="Pré-visualização"></div></div><div class="form-grid"><div class="field span-2"><label>Nome completo</label><input class="input" name="nome" value="${esc(p.nome||"")}" required></div><div class="field"><label>Username</label><input class="input" name="username" value="${esc(p.username||"")}" required></div><div class="field"><label>E-mail</label><input class="input" value="${esc(email)}" disabled></div><div class="field"><label>Curso</label><select class="select" name="curso"><option value="">Escolha seu curso</option><option ${p.curso==="Marketing"?"selected":""}>Marketing</option><option ${p.curso==="Administração"?"selected":""}>Administração</option><option ${p.curso==="Informática"?"selected":""}>Informática</option></select></div><div class="field"><label>Nova senha</label><input class="input" type="password" name="password" minlength="6" placeholder="Deixe vazio para manter"></div><div class="field span-2"><label>Confirmação da nova senha</label><input class="input" type="password" name="password2" minlength="6" placeholder="Repita a nova senha"></div></div><p id="profile-message" class="message"></p><div class="profile-actions"><button type="submit" class="btn btn-primary">Salvar alterações</button><button type="button" class="btn btn-ghost" data-action="send-password-reset">Enviar link de redefinição</button></div></form>`);document.querySelector('[name="foto"]')?.addEventListener("change",e=>{const f=e.target.files?.[0],img=document.getElementById("profile-preview");if(f&&img){img.src=URL.createObjectURL(f);img.classList.remove("hidden")}})}
 function projectModal(){openModal("Novo projeto",`<form id="project-form"><div class="form-grid"><div class="field span-2"><label>Título</label><input class="input" name="titulo" required></div><div class="field span-2"><label>Descrição</label><textarea class="textarea" name="descricao" required></textarea></div><div class="field"><label>Objetivo</label><input class="input" name="objetivo"></div><div class="field"><label>Área</label><input class="input" name="area" placeholder="Pode deixar em aberto"></div><div class="field"><label>Participação</label><select class="select" name="tipo_participacao"><option value="aberto">Aberto</option><option value="fechado">Fechado</option></select></div><div class="field"><label>Imagem de capa</label><input class="input" name="capa" type="file" accept="image/*"><img id="cover-preview" class="cover-preview hidden" alt="Pré-visualização"></div><div class="field span-2"><label>Roadmap</label><div class="roadmap-summary"><span>Progresso das etapas selecionadas</span><strong id="roadmap-progress">0%</strong></div><div class="steps">${defaultSteps.map((step,i)=>`<label class="step"><input type="checkbox" name="step" value="${i}" data-percent="${step.percentual}"><span>${esc(step.titulo)} <small class="muted">(${step.percentual}%)</small></span></label>`).join("")}</div></div></div><p id="project-message" class="message"></p><button type="submit" class="btn btn-primary full">Criar projeto</button></form>`);document.querySelector('[name="capa"]')?.addEventListener("change",e=>{const f=e.target.files?.[0],img=document.getElementById("cover-preview");if(f&&img){img.src=URL.createObjectURL(f);img.classList.remove("hidden")}});document.querySelectorAll('[name="step"]').forEach(x=>x.addEventListener("change",()=>{document.getElementById("roadmap-progress").textContent=`${[...document.querySelectorAll('[name="step"]:checked')].reduce((s,x)=>s+Number(x.dataset.percent),0)}%`}))}
 async function resolveUsername(v){const x=String(v||"").trim().toLowerCase();if(x.includes("@"))return x;const r=await supabaseClient.rpc("resolve_username",{username_input:x});if(r.error)throw r.error;return r.data?.[0]?.email||null}async function loadProfile(user){const r=await supabaseClient.from("profiles").select("*").eq("id",user.id).maybeSingle();if(r.error)throw r.error;state.profile=r.data||null}async function loadData(){if(!state.user)return;const [p,n,f]=await Promise.all([supabaseClient.from("projects").select("*").order("created_at",{ascending:false}),supabaseClient.from("news").select("*").eq("status","publicado"),supabaseClient.from("favorites").select("*").eq("user_id",state.user.id)]);if(!p.error)state.projects=p.data||[];if(!n.error)state.news=n.data||[];if(!f.error)state.favorites=f.data||[]}async function finishSession(session){state.session=session;state.user=session?.user||null;if(!state.user){state.profile=null;renderLogin();return}await loadProfile(state.user);if(!state.profile){if(state.user.identities?.some(x=>x.provider==="google")){googleProfileModal();return}showToast("Perfil não encontrado.");return}await loadData();renderApp()}
 async function login(e){e.preventDefault();const f=e.target,m=document.getElementById("login-message");try{const email=await resolveUsername(f.elements.identifier.value);if(!email){m.textContent="Usuário não encontrado.";return}const r=await supabaseClient.auth.signInWithPassword({email,password:f.elements.password.value});if(r.error)throw r.error;await finishSession(r.data.session)}catch(x){m.textContent=authError(x)}}async function register(e){e.preventDefault();const f=e.target,m=document.getElementById("account-message");try{const r=await supabaseClient.auth.signUp({email:f.elements.email.value,password:f.elements.password.value,options:{emailRedirectTo:APP_URL,data:{nome:f.elements.nome.value,username:f.elements.username.value.toLowerCase(),tipo_solicitado:f.elements.tipo.value,curso:f.elements.curso.value||null}}});if(r.error)throw r.error;m.className="message ok";m.textContent=r.data.session?"Cadastro realizado.":"Cadastro criado. Confirme o e-mail."}catch(x){m.textContent=authError(x)}}async function saveGoogle(e){e.preventDefault();const f=e.target,m=document.getElementById("google-profile-message");try{const r=await supabaseClient.from("profiles").update({nome:f.elements.nome.value,username:f.elements.username.value.toLowerCase(),curso:f.elements.curso.value}).eq("id",state.user.id);if(r.error)throw r.error;closeModal();await finishSession(state.session)}catch(x){m.textContent=authError(x)}}async function oauth(provider){const r=await supabaseClient.auth.signInWithOAuth({provider,options:{redirectTo:APP_URL}});if(r.error)showToast(authError(r.error))}async function forgot(e){e.preventDefault();const r=await supabaseClient.auth.resetPasswordForEmail(document.getElementById("forgot-email").value,{redirectTo:APP_URL});if(r.error)document.getElementById("forgot-message").textContent=authError(r.error);else{closeModal();showToast("Confira seu e-mail.")}}
 async function uploadProjectCover(file){if(!file)return null;const path=`${state.user.id}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;const r=await supabaseClient.storage.from("project-covers").upload(path,file,{upsert:false});if(r.error)throw r.error;return supabaseClient.storage.from("project-covers").getPublicUrl(path).data.publicUrl}async function uploadProfilePhoto(file){if(!file)return state.profile?.foto_url||null;const path=`${state.user.id}/profile-${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;const r=await supabaseClient.storage.from("project-covers").upload(path,file,{upsert:false});if(r.error)throw r.error;return supabaseClient.storage.from("project-covers").getPublicUrl(path).data.publicUrl}
 async function createProject(e){e.preventDefault();const f=e.target,m=document.getElementById("project-message"),button=f.querySelector('button[type="submit"]');button.disabled=true;try{const selected=[...f.querySelectorAll('[name="step"]:checked')],progresso=selected.reduce((s,x)=>s+Number(x.dataset.percent||0),0),imagem_capa_url=await uploadProjectCover(f.elements.capa.files?.[0]);const r=await supabaseClient.from("projects").insert({titulo:f.elements.titulo.value.trim(),descricao:f.elements.descricao.value.trim(),objetivo:f.elements.objetivo.value.trim()||null,area:f.elements.area.value.trim()||"Não informada",tipo_participacao:f.elements.tipo_participacao.value,autora_id:state.user.id,progresso,status:progresso===100?"concluido":progresso?"em_andamento":"planejamento",status_publicacao:"pendente",imagem_capa_url}).select().single();if(r.error)throw r.error;if(selected.length){const s=await supabaseClient.from("project_steps").insert(selected.map((x,i)=>({project_id:r.data.id,titulo:defaultSteps[Number(x.value)].titulo,ordem:i+1,concluida:true})));if(s.error)throw s.error}closeModal();await loadData();goPage("projects");showToast("Projeto criado com sucesso.")}catch(x){m.textContent=authError(x)}finally{button.disabled=false}}async function createUpdate(e){e.preventDefault();const f=e.target,id=f.dataset.project;const r=await supabaseClient.from("project_updates").insert({project_id:id,author_id:state.user.id,titulo:f.elements.titulo.value.trim(),descricao:f.elements.descricao.value.trim()});if(r.error){showToast(authError(r));return}closeModal();showToast("Atualização publicada como notícia.");await goPage("news")}async function saveProfile(e){e.preventDefault();const f=e.target,m=document.getElementById("profile-message"),button=f.querySelector('button[type="submit"]');if(f.elements.password.value&&f.elements.password.value!==f.elements.password2.value){m.textContent="As senhas não conferem.";return}button.disabled=true;try{const foto_url=await uploadProfilePhoto(f.elements.foto.files?.[0]);const r=await supabaseClient.from("profiles").update({nome:f.elements.nome.value.trim(),username:f.elements.username.value.trim().toLowerCase(),curso:f.elements.curso.value||null,foto_url}).eq("id",state.user.id);if(r.error)throw r.error;if(f.elements.password.value){const p=await supabaseClient.auth.updateUser({password:f.elements.password.value});if(p.error)throw p.error}await loadProfile(state.user);closeModal();renderApp();showToast("Perfil atualizado com sucesso.")}catch(x){m.textContent=authError(x)}finally{button.disabled=false}}async function sendPasswordReset(){const r=await supabaseClient.auth.resetPasswordForEmail(state.user.email,{redirectTo:APP_URL});if(r.error)showToast(authError(r));else showToast("Link de redefinição enviado para seu e-mail.")}
-document.addEventListener("submit",e=>{if(e.target.id==="login-form")login(e);if(e.target.id==="account-form")register(e);if(e.target.id==="google-profile-form")saveGoogle(e);if(e.target.id==="forgot-form")forgot(e);if(e.target.id==="project-form")createProject(e);if(e.target.id==="edit-project-form")saveProjectEdit(e);if(e.target.id==="update-project-form")createUpdate(e);if(e.target.id==="profile-form")saveProfile(e)});document.addEventListener("click",e=>{const p=e.target.closest("[data-page]"),a=e.target.closest("[data-action]"),o=e.target.closest("[data-oauth]"),t=e.target.closest("[data-toggle-password]"),project=e.target.closest("[data-project]"),projectNews=e.target.closest("[data-project-news]");if(p){e.preventDefault();goPage(p.dataset.page)}if(project&&!projectNews)openProject(project.dataset.project);if(projectNews)openProject(projectNews.dataset.projectNews);if(o)oauth(o.dataset.oauth);if(t){const i=document.getElementById(t.dataset.togglePassword);if(i)i.type=i.type==="password"?"text":"password"}if(a){const n=a.dataset.action;if(n==="create-account")registerModal();if(n==="forgot-password")openForgot();if(n==="new-project")projectModal();if(n==="edit-project"){
-  const project=state.projects.find(
-    x=>String(x.id)===String(a.dataset.project)
-  );
+document.addEventListener("submit",e=>{
+  if(e.target.id==="login-form")login(e);
+  if(e.target.id==="account-form")register(e);
+  if(e.target.id==="google-profile-form")saveGoogle(e);
+  if(e.target.id==="forgot-form")forgot(e);
+  if(e.target.id==="project-form")createProject(e);
+  if(e.target.id==="edit-project-form")saveProjectEdit(e);
+  if(e.target.id==="update-project-form")createUpdate(e);
+  if(e.target.id==="profile-form")saveProfile(e);
+  if(e.target.id==="comment-form")createProjectComment(e);
+  if(e.target.id==="participation-form")requestProjectParticipation(e);
+});
 
-  if(project)projectEditModal(project);
-}
+document.addEventListener("click",e=>{
+  const p=e.target.closest("[data-page]");
+  const a=e.target.closest("[data-action]");
+  const o=e.target.closest("[data-oauth]");
+  const t=e.target.closest("[data-toggle-password]");
+  const project=e.target.closest("[data-project]");
+  const projectNews=e.target.closest("[data-project-news]");
 
-if(n==="delete-project"){
-  const project=state.projects.find(
-    x=>String(x.id)===String(a.dataset.project)
-  );
-
-  if(project)deleteProject(project);
-}
-
-if(n==="remove-project-cover"){
-  const form=document.getElementById("edit-project-form");
-
-  if(form){
-    form.dataset.removeCover="true";
-    document
-      .getElementById("edit-cover-preview")
-      ?.classList.add("hidden");
+  if(p){
+    e.preventDefault();
+    goPage(p.dataset.page);
   }
-}
-if(n==="edit-profile")profileModal();if(n==="send-password-reset")sendPasswordReset();if(n==="toggle-menu")document.getElementById("sidebar")?.classList.toggle("open");if(n==="logout")supabaseClient.auth.signOut();if(n==="notifications")showToast("Você não tem novas notificações.")}});modalRoot.addEventListener("click",e=>{if(e.target.hasAttribute("data-close-modal"))closeModal()});supabaseClient.auth.onAuthStateChange((_e,s)=>{if(s?.user?.id!==state.user?.id||!s)finishSession(s)});(async()=>{const r=await supabaseClient.auth.getSession();await finishSession(r.data?.session||null)})();
+
+  if(project&&!projectNews){
+    openProject(project.dataset.project);
+  }
+
+  if(projectNews){
+    openProject(projectNews.dataset.projectNews);
+  }
+
+  if(o){
+    oauth(o.dataset.oauth);
+  }
+
+  if(t){
+    const i=document.getElementById(t.dataset.togglePassword);
+
+    if(i){
+      i.type=i.type==="password"?"text":"password";
+    }
+  }
+
+  if(a){
+    const n=a.dataset.action;
+
+    if(n==="create-account")registerModal();
+    if(n==="forgot-password")openForgot();
+    if(n==="new-project")projectModal();
+
+    if(n==="edit-project"){
+      const project=state.projects.find(
+        x=>String(x.id)===String(a.dataset.project)
+      );
+
+      if(project)projectEditModal(project);
+    }
+
+    if(n==="delete-project"){
+      const project=state.projects.find(
+        x=>String(x.id)===String(a.dataset.project)
+      );
+
+      if(project)deleteProject(project);
+    }
+
+    if(n==="toggle-like"){
+      toggleProjectLike(a.dataset.project);
+    }
+
+    if(n==="remove-project-cover"){
+      const form=document.getElementById("edit-project-form");
+
+      if(form){
+        form.dataset.removeCover="true";
+
+        document
+          .getElementById("edit-cover-preview")
+          ?.classList.add("hidden");
+      }
+    }
+
+    if(n==="edit-profile")profileModal();
+    if(n==="send-password-reset")sendPasswordReset();
+
+    if(n==="toggle-menu"){
+      document
+        .getElementById("sidebar")
+        ?.classList.toggle("open");
+    }
+
+    if(n==="logout"){
+      supabaseClient.auth.signOut();
+    }
+
+    if(n==="notifications"){
+      showToast("Você não tem novas notificações.");
+    }
+  }
+});
+
+modalRoot.addEventListener("click",e=>{
+  if(e.target.hasAttribute("data-close-modal")){
+    closeModal();
+  }
+});
+
+supabaseClient.auth.onAuthStateChange((_e,s)=>{
+  if(s?.user?.id!==state.user?.id||!s){
+    finishSession(s);
+  }
+});
+
+(async()=>{
+  const r=await supabaseClient.auth.getSession();
+  await finishSession(r.data?.session||null);
+})();
 </script>
 </body>
 </html>
