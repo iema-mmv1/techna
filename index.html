@@ -1070,11 +1070,336 @@ async function requestProjectParticipation(e){
   await openProject(projectId);
 }
 function profileModal(){const p=state.profile||{},email=state.user?.email||"";openModal("Editar meu perfil",`<form id="profile-form"><div class="profile-avatar-editor">${avatar(p,true)}<div><strong>Imagem do perfil</strong><p class="muted">Escolha uma imagem para aparecer no seu perfil.</p><input class="input" type="file" name="foto" accept="image/*"><img id="profile-preview" class="cover-preview hidden" alt="Pré-visualização"></div></div><div class="form-grid"><div class="field span-2"><label>Nome completo</label><input class="input" name="nome" value="${esc(p.nome||"")}" required></div><div class="field"><label>Username</label><input class="input" name="username" value="${esc(p.username||"")}" required></div><div class="field"><label>E-mail</label><input class="input" value="${esc(email)}" disabled></div><div class="field"><label>Curso</label><select class="select" name="curso"><option value="">Escolha seu curso</option><option ${p.curso==="Marketing"?"selected":""}>Marketing</option><option ${p.curso==="Administração"?"selected":""}>Administração</option><option ${p.curso==="Informática"?"selected":""}>Informática</option></select></div><div class="field"><label>Nova senha</label><input class="input" type="password" name="password" minlength="6" placeholder="Deixe vazio para manter"></div><div class="field span-2"><label>Confirmação da nova senha</label><input class="input" type="password" name="password2" minlength="6" placeholder="Repita a nova senha"></div></div><p id="profile-message" class="message"></p><div class="profile-actions"><button type="submit" class="btn btn-primary">Salvar alterações</button><button type="button" class="btn btn-ghost" data-action="send-password-reset">Enviar link de redefinição</button></div></form>`);document.querySelector('[name="foto"]')?.addEventListener("change",e=>{const f=e.target.files?.[0],img=document.getElementById("profile-preview");if(f&&img){img.src=URL.createObjectURL(f);img.classList.remove("hidden")}})}
-function projectModal(){openModal("Novo projeto",`<form id="project-form"><div class="form-grid"><div class="field span-2"><label>Título</label><input class="input" name="titulo" required></div><div class="field span-2"><label>Descrição</label><textarea class="textarea" name="descricao" required></textarea></div><div class="field"><label>Objetivo</label><input class="input" name="objetivo"></div><div class="field"><label>Área</label><input class="input" name="area" placeholder="Pode deixar em aberto"></div><div class="field"><label>Participação</label><select class="select" name="tipo_participacao"><option value="aberto">Aberto</option><option value="fechado">Fechado</option></select></div><div class="field"><label>Imagem de capa</label><input class="input" name="capa" type="file" accept="image/*"><img id="cover-preview" class="cover-preview hidden" alt="Pré-visualização"></div><div class="field span-2"><label>Roadmap</label><div class="roadmap-summary"><span>Progresso das etapas selecionadas</span><strong id="roadmap-progress">0%</strong></div><div class="steps">${defaultSteps.map((step,i)=>`<label class="step"><input type="checkbox" name="step" value="${i}" data-percent="${step.percentual}"><span>${esc(step.titulo)} <small class="muted">(${step.percentual}%)</small></span></label>`).join("")}</div></div></div><p id="project-message" class="message"></p><button type="submit" class="btn btn-primary full">Criar projeto</button></form>`);document.querySelector('[name="capa"]')?.addEventListener("change",e=>{const f=e.target.files?.[0],img=document.getElementById("cover-preview");if(f&&img){img.src=URL.createObjectURL(f);img.classList.remove("hidden")}});document.querySelectorAll('[name="step"]').forEach(x=>x.addEventListener("change",()=>{document.getElementById("roadmap-progress").textContent=`${[...document.querySelectorAll('[name="step"]:checked')].reduce((s,x)=>s+Number(x.dataset.percent),0)}%`}))}
+let newProjectAlbum=[];
+
+function projectModal(){
+  newProjectAlbum=[];
+
+  openModal("Novo projeto",`
+    <form id="project-form">
+      <div class="form-grid">
+        <div class="field span-2">
+          <label>Título</label>
+          <input class="input" name="titulo" required>
+        </div>
+
+        <div class="field span-2">
+          <label>Descrição</label>
+          <textarea class="textarea"
+                    name="descricao"
+                    required></textarea>
+        </div>
+
+        <div class="field">
+          <label>Objetivo</label>
+          <input class="input" name="objetivo">
+        </div>
+
+        <div class="field">
+          <label>Área</label>
+          <input class="input"
+                 name="area"
+                 placeholder="Pode deixar em aberto">
+        </div>
+
+        <div class="field">
+          <label>Participação</label>
+          <select class="select" name="tipo_participacao">
+            <option value="aberto">Aberto</option>
+            <option value="fechado">Fechado</option>
+          </select>
+        </div>
+
+        <div class="album-editor">
+          <h3>Capa e álbum</h3>
+          <p>
+            Adicione fotos. Depois escolha qual será a capa
+            do projeto.
+          </p>
+
+          <label class="btn btn-secondary"
+                 for="new-project-images">
+            + Adicionar fotos
+          </label>
+
+          <input id="new-project-images"
+                 class="hidden"
+                 type="file"
+                 accept="image/*"
+                 multiple>
+
+          <div id="new-project-album"
+               class="album-editor-grid">
+            <p class="muted">
+              Ainda não há imagens.
+            </p>
+          </div>
+        </div>
+
+        <div class="field span-2">
+          <label>Roadmap</label>
+
+          <div class="roadmap-summary">
+            <span>Progresso das etapas selecionadas</span>
+            <strong id="roadmap-progress">0%</strong>
+          </div>
+
+          <div class="steps">
+            ${defaultSteps.map((step,i)=>`
+              <label class="step">
+                <input type="checkbox"
+                       name="step"
+                       value="${i}"
+                       data-percent="${step.percentual}">
+                <span>
+                  ${esc(step.titulo)}
+                  <small class="muted">
+                    (${step.percentual}%)
+                  </small>
+                </span>
+              </label>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+
+      <p id="project-message" class="message"></p>
+
+      <button type="submit"
+              class="btn btn-primary full">
+        Criar projeto
+      </button>
+    </form>
+  `);
+
+  document
+    .getElementById("new-project-images")
+    ?.addEventListener("change",event=>{
+      const files=[...event.target.files]
+        .filter(file=>file.type.startsWith("image/"));
+
+      for(const file of files){
+        newProjectAlbum.push({
+          file,
+          url:URL.createObjectURL(file),
+          cover:newProjectAlbum.length===0
+        });
+      }
+
+      event.target.value="";
+      renderNewProjectAlbum();
+    });
+
+  document
+    .getElementById("new-project-album")
+    ?.addEventListener("click",event=>{
+      const coverButton=event.target.closest("[data-new-cover]");
+      const removeButton=event.target.closest("[data-new-remove]");
+
+      if(coverButton){
+        const index=Number(coverButton.dataset.newCover);
+
+        newProjectAlbum.forEach((image,i)=>{
+          image.cover=i===index;
+        });
+
+        renderNewProjectAlbum();
+      }
+
+      if(removeButton){
+        const index=Number(removeButton.dataset.newRemove);
+        const removed=newProjectAlbum.splice(index,1)[0];
+
+        if(removed){
+          URL.revokeObjectURL(removed.url);
+        }
+
+        if(
+          newProjectAlbum.length &&
+          !newProjectAlbum.some(image=>image.cover)
+        ){
+          newProjectAlbum[0].cover=true;
+        }
+
+        renderNewProjectAlbum();
+      }
+    });
+
+  document.querySelectorAll('[name="step"]')
+    .forEach(input=>input.addEventListener("change",()=>{
+      const total=[
+        ...document.querySelectorAll('[name="step"]:checked')
+      ].reduce(
+        (sum,item)=>sum+Number(item.dataset.percent),
+        0
+      );
+
+      document.getElementById("roadmap-progress")
+        .textContent=`${total}%`;
+    }));
+}
+
+function renderNewProjectAlbum(){
+  const container=document.getElementById(
+    "new-project-album"
+  );
+
+  if(!container)return;
+
+  container.innerHTML=newProjectAlbum.length
+    ?newProjectAlbum.map((image,index)=>`
+      <div class="album-editor-item
+                  ${image.cover?"is-cover":""}">
+        <img src="${esc(image.url)}"
+             alt="Foto ${index+1} do projeto">
+
+        <small>
+          ${image.cover?"Capa selecionada":"Foto do álbum"}
+        </small>
+
+        ${
+          image.cover
+            ? ""
+            : `<button type="button"
+                       data-new-cover="${index}">
+                 Usar como capa
+               </button>`
+        }
+
+        <button type="button"
+                data-new-remove="${index}">
+          Remover
+        </button>
+      </div>
+    `).join("")
+    :`<p class="muted">Ainda não há imagens.</p>`;
+}
 async function resolveUsername(v){const x=String(v||"").trim().toLowerCase();if(x.includes("@"))return x;const r=await supabaseClient.rpc("resolve_username",{username_input:x});if(r.error)throw r.error;return r.data?.[0]?.email||null}async function loadProfile(user){const r=await supabaseClient.from("profiles").select("*").eq("id",user.id).maybeSingle();if(r.error)throw r.error;state.profile=r.data||null}async function loadData(){if(!state.user)return;const [p,n,f]=await Promise.all([supabaseClient.from("projects").select("*").order("created_at",{ascending:false}),supabaseClient.from("news").select("*").eq("status","publicado"),supabaseClient.from("favorites").select("*").eq("user_id",state.user.id)]);if(!p.error)state.projects=p.data||[];if(!n.error)state.news=n.data||[];if(!f.error)state.favorites=f.data||[]}async function finishSession(session){state.session=session;state.user=session?.user||null;if(!state.user){state.profile=null;renderLogin();return}await loadProfile(state.user);if(!state.profile){if(state.user.identities?.some(x=>x.provider==="google")){googleProfileModal();return}showToast("Perfil não encontrado.");return}await loadData();renderApp()}
 async function login(e){e.preventDefault();const f=e.target,m=document.getElementById("login-message");try{const email=await resolveUsername(f.elements.identifier.value);if(!email){m.textContent="Usuário não encontrado.";return}const r=await supabaseClient.auth.signInWithPassword({email,password:f.elements.password.value});if(r.error)throw r.error;await finishSession(r.data.session)}catch(x){m.textContent=authError(x)}}async function register(e){e.preventDefault();const f=e.target,m=document.getElementById("account-message");try{const r=await supabaseClient.auth.signUp({email:f.elements.email.value,password:f.elements.password.value,options:{emailRedirectTo:APP_URL,data:{nome:f.elements.nome.value,username:f.elements.username.value.toLowerCase(),tipo_solicitado:f.elements.tipo.value,curso:f.elements.curso.value||null}}});if(r.error)throw r.error;m.className="message ok";m.textContent=r.data.session?"Cadastro realizado.":"Cadastro criado. Confirme o e-mail."}catch(x){m.textContent=authError(x)}}async function saveGoogle(e){e.preventDefault();const f=e.target,m=document.getElementById("google-profile-message");try{const r=await supabaseClient.from("profiles").update({nome:f.elements.nome.value,username:f.elements.username.value.toLowerCase(),curso:f.elements.curso.value}).eq("id",state.user.id);if(r.error)throw r.error;closeModal();await finishSession(state.session)}catch(x){m.textContent=authError(x)}}async function oauth(provider){const r=await supabaseClient.auth.signInWithOAuth({provider,options:{redirectTo:APP_URL}});if(r.error)showToast(authError(r.error))}async function forgot(e){e.preventDefault();const r=await supabaseClient.auth.resetPasswordForEmail(document.getElementById("forgot-email").value,{redirectTo:APP_URL});if(r.error)document.getElementById("forgot-message").textContent=authError(r.error);else{closeModal();showToast("Confira seu e-mail.")}}
 async function uploadProjectCover(file){if(!file)return null;const path=`${state.user.id}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;const r=await supabaseClient.storage.from("project-covers").upload(path,file,{upsert:false});if(r.error)throw r.error;return supabaseClient.storage.from("project-covers").getPublicUrl(path).data.publicUrl}async function uploadProfilePhoto(file){if(!file)return state.profile?.foto_url||null;const path=`${state.user.id}/profile-${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;const r=await supabaseClient.storage.from("project-covers").upload(path,file,{upsert:false});if(r.error)throw r.error;return supabaseClient.storage.from("project-covers").getPublicUrl(path).data.publicUrl}
-async function createProject(e){e.preventDefault();const f=e.target,m=document.getElementById("project-message"),button=f.querySelector('button[type="submit"]');button.disabled=true;try{const selected=[...f.querySelectorAll('[name="step"]:checked')],progresso=selected.reduce((s,x)=>s+Number(x.dataset.percent||0),0),imagem_capa_url=await uploadProjectCover(f.elements.capa.files?.[0]);const r=await supabaseClient.from("projects").insert({titulo:f.elements.titulo.value.trim(),descricao:f.elements.descricao.value.trim(),objetivo:f.elements.objetivo.value.trim()||null,area:f.elements.area.value.trim()||"Não informada",tipo_participacao:f.elements.tipo_participacao.value,autora_id:state.user.id,progresso,status:progresso===100?"concluido":progresso?"em_andamento":"planejamento",status_publicacao:"pendente",imagem_capa_url}).select().single();if(r.error)throw r.error;if(selected.length){const s=await supabaseClient.from("project_steps").insert(selected.map((x,i)=>({project_id:r.data.id,titulo:defaultSteps[Number(x.value)].titulo,ordem:i+1,concluida:true})));if(s.error)throw s.error}closeModal();await loadData();goPage("projects");showToast("Projeto criado com sucesso.")}catch(x){m.textContent=authError(x)}finally{button.disabled=false}}async function createUpdate(e){e.preventDefault();const f=e.target,id=f.dataset.project;const r=await supabaseClient.from("project_updates").insert({project_id:id,author_id:state.user.id,titulo:f.elements.titulo.value.trim(),descricao:f.elements.descricao.value.trim()});if(r.error){showToast(authError(r));return}closeModal();showToast("Atualização publicada como notícia.");await goPage("news")}async function saveProfile(e){e.preventDefault();const f=e.target,m=document.getElementById("profile-message"),button=f.querySelector('button[type="submit"]');if(f.elements.password.value&&f.elements.password.value!==f.elements.password2.value){m.textContent="As senhas não conferem.";return}button.disabled=true;try{const foto_url=await uploadProfilePhoto(f.elements.foto.files?.[0]);const r=await supabaseClient.from("profiles").update({nome:f.elements.nome.value.trim(),username:f.elements.username.value.trim().toLowerCase(),curso:f.elements.curso.value||null,foto_url}).eq("id",state.user.id);if(r.error)throw r.error;if(f.elements.password.value){const p=await supabaseClient.auth.updateUser({password:f.elements.password.value});if(p.error)throw p.error}await loadProfile(state.user);closeModal();renderApp();showToast("Perfil atualizado com sucesso.")}catch(x){m.textContent=authError(x)}finally{button.disabled=false}}async function sendPasswordReset(){const r=await supabaseClient.auth.resetPasswordForEmail(state.user.email,{redirectTo:APP_URL});if(r.error)showToast(authError(r));else showToast("Link de redefinição enviado para seu e-mail.")}
+async function createProject(e){
+  e.preventDefault();
+
+  const form=e.target;
+  const message=document.getElementById("project-message");
+  const button=form.querySelector('button[type="submit"]');
+
+  button.disabled=true;
+
+  try{
+    const selected=[
+      ...form.querySelectorAll('[name="step"]:checked')
+    ];
+
+    const progresso=selected.reduce(
+      (sum,item)=>sum+Number(item.dataset.percent||0),
+      0
+    );
+
+    const uploadedImages=[];
+
+    for(const image of newProjectAlbum){
+      const arquivo_url=await uploadProjectCover(image.file);
+
+      uploadedImages.push({
+        arquivo_url,
+        cover:image.cover
+      });
+    }
+
+    const selectedCover=uploadedImages.find(
+      image=>image.cover
+    );
+
+    const created=await supabaseClient
+      .from("projects")
+      .insert({
+        titulo:form.elements.titulo.value.trim(),
+        descricao:form.elements.descricao.value.trim(),
+        objetivo:form.elements.objetivo.value.trim()||null,
+        area:form.elements.area.value.trim()||
+          "Não informada",
+        tipo_participacao:
+          form.elements.tipo_participacao.value,
+        autora_id:state.user.id,
+        progresso,
+        status:
+          progresso===100
+            ?"concluido"
+            :progresso
+              ?"em_andamento"
+              :"planejamento",
+        status_publicacao:"pendente",
+        imagem_capa_url:
+          selectedCover?.arquivo_url||null
+      })
+      .select()
+      .single();
+
+    if(created.error)throw created.error;
+
+    const projectId=created.data.id;
+
+    if(uploadedImages.length){
+      const imagesResult=await supabaseClient
+        .from("project_images")
+        .insert(
+          uploadedImages.map((image,index)=>({
+            project_id:projectId,
+            uploaded_by:state.user.id,
+            arquivo_url:image.arquivo_url,
+            ordem:index
+          }))
+        );
+
+      if(imagesResult.error){
+        throw new Error(
+          "O projeto foi criado, mas não foi possível " +
+          "registrar todas as fotos no álbum: " +
+          imagesResult.error.message
+        );
+      }
+    }
+
+    if(selected.length){
+      const stepsResult=await supabaseClient
+        .from("project_steps")
+        .insert(
+          selected.map((item,index)=>({
+            project_id:projectId,
+            titulo:
+              defaultSteps[Number(item.value)].titulo,
+            ordem:index+1,
+            concluida:true
+          }))
+        );
+
+      if(stepsResult.error){
+        throw new Error(
+          "O projeto foi criado, mas não foi possível " +
+          "registrar o roadmap: " +
+          stepsResult.error.message
+        );
+      }
+    }
+
+    newProjectAlbum.forEach(image=>{
+      URL.revokeObjectURL(image.url);
+    });
+
+    newProjectAlbum=[];
+    closeModal();
+    await loadData();
+    await goPage("projects");
+    showToast("Projeto criado com álbum e capa.");
+  }catch(error){
+    console.error("Erro ao criar projeto:",error);
+    message.textContent=authError(error);
+  }finally{
+    button.disabled=false;
+  }
+}
+async function createUpdate(e){e.preventDefault();const f=e.target,id=f.dataset.project;const r=await supabaseClient.from("project_updates").insert({project_id:id,author_id:state.user.id,titulo:f.elements.titulo.value.trim(),descricao:f.elements.descricao.value.trim()});if(r.error){showToast(authError(r));return}closeModal();showToast("Atualização publicada como notícia.");await goPage("news")}async function saveProfile(e){e.preventDefault();const f=e.target,m=document.getElementById("profile-message"),button=f.querySelector('button[type="submit"]');if(f.elements.password.value&&f.elements.password.value!==f.elements.password2.value){m.textContent="As senhas não conferem.";return}button.disabled=true;try{const foto_url=await uploadProfilePhoto(f.elements.foto.files?.[0]);const r=await supabaseClient.from("profiles").update({nome:f.elements.nome.value.trim(),username:f.elements.username.value.trim().toLowerCase(),curso:f.elements.curso.value||null,foto_url}).eq("id",state.user.id);if(r.error)throw r.error;if(f.elements.password.value){const p=await supabaseClient.auth.updateUser({password:f.elements.password.value});if(p.error)throw p.error}await loadProfile(state.user);closeModal();renderApp();showToast("Perfil atualizado com sucesso.")}catch(x){m.textContent=authError(x)}finally{button.disabled=false}}async function sendPasswordReset(){const r=await supabaseClient.auth.resetPasswordForEmail(state.user.email,{redirectTo:APP_URL});if(r.error)showToast(authError(r));else showToast("Link de redefinição enviado para seu e-mail.")}
 document.addEventListener("submit",e=>{
   if(e.target.id==="login-form")login(e);
   if(e.target.id==="account-form")register(e);
