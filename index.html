@@ -1719,7 +1719,7 @@ technaBellStyle.textContent=`
     position:relative;
     display:inline-flex;
     align-items:center;
-    justify-content:center
+    justify-content:center;
   }
   .techna-bell-button svg{
     width:23px;
@@ -1728,7 +1728,7 @@ technaBellStyle.textContent=`
     stroke:currentColor;
     stroke-width:2;
     stroke-linecap:round;
-    stroke-linejoin:round
+    stroke-linejoin:round;
   }
   .techna-bell-count{
     position:absolute;
@@ -1744,43 +1744,51 @@ technaBellStyle.textContent=`
     font-weight:700;
     display:flex;
     align-items:center;
-    justify-content:center
+    justify-content:center;
   }
   .techna-bell-count[hidden]{
-    display:none
+    display:none;
   }
-  .techna-notification{
-    display:block;
-    width:100%;
-    text-align:left;
+  .techna-notification-menu{
+    position:fixed;
+    width:min(380px,calc(100vw - 24px));
+    max-height:min(420px,calc(100vh - 90px));
+    overflow-y:auto;
     padding:14px;
-    margin:8px 0;
-    border:1px solid #e5e1ea;
-    border-radius:12px;
     background:#fff;
-    color:inherit;
-    cursor:pointer
+    border:1px solid #e5e1ea;
+    border-radius:14px;
+    box-shadow:0 12px 35px rgba(34,12,48,.2);
+    z-index:10000;
   }
-  .techna-notification:not(.is-read){
-    background:#f3f9e3;
-    border-color:#acd215
+  .techna-notification-menu[hidden]{
+    display:none;
   }
-  .techna-notification strong,
-  .techna-notification span,
-  .techna-notification small{
-    display:block
+  .techna-notification-menu h3{
+    margin:0 0 10px;
+    font-size:17px;
+    color:#32103e;
   }
-  .techna-notification span{
+  .techna-notification-item{
+    padding:11px 4px;
+    border-top:1px solid #eee9f1;
+  }
+  .techna-notification-item strong,
+  .techna-notification-item span,
+  .techna-notification-item small{
+    display:block;
+  }
+  .techna-notification-item span{
+    margin-top:4px;
+    line-height:1.4;
+  }
+  .techna-notification-item small{
     margin-top:5px;
-    line-height:1.4
+    color:#686473;
   }
-  .techna-notification small{
-    margin-top:7px;
-    color:#686473
-  }
-  .techna-notification-list{
-    max-height:65vh;
-    overflow-y:auto
+  .techna-notification-empty{
+    margin:12px 0 4px;
+    color:#686473;
   }
 `;
 document.head.appendChild(technaBellStyle);
@@ -1794,6 +1802,8 @@ const technaBellSvg=`
   <span class="techna-bell-count" hidden></span>
 `;
 
+let technaNotificationMenu=null;
+
 function technaPrepareBell(){
   const button=document.querySelector(
     '[data-action="notifications"]'
@@ -1804,8 +1814,9 @@ function technaPrepareBell(){
   if(!button.classList.contains("techna-bell-button")){
     button.classList.add("techna-bell-button");
     button.innerHTML=technaBellSvg;
-    button.setAttribute("aria-label","Abrir notificações");
     button.setAttribute("title","Notificações");
+    button.setAttribute("aria-label","Abrir notificações");
+    button.setAttribute("aria-expanded","false");
   }
 
   return button;
@@ -1813,10 +1824,9 @@ function technaPrepareBell(){
 
 async function technaRefreshBell(){
   const button=technaPrepareBell();
+  const userId=state.user?.id;
 
-  if(!button||!state.user)return;
-
-  const userId=state.user.id;
+  if(!button||!userId)return;
 
   const result=await supabaseClient
     .from("notifications")
@@ -1842,7 +1852,6 @@ async function technaRefreshBell(){
   if(!badge)return;
 
   const count=result.count||0;
-
   badge.hidden=count===0;
   badge.textContent=count>99?"99+":String(count);
 
@@ -1854,35 +1863,67 @@ async function technaRefreshBell(){
   );
 }
 
-async function technaOpenNotifications(){
-  if(!state.user)return;
+function technaCloseNotifications(){
+  if(technaNotificationMenu){
+    technaNotificationMenu.remove();
+    technaNotificationMenu=null;
+  }
 
-  const userId=state.user.id;
+  document
+    .querySelector('[data-action="notifications"]')
+    ?.setAttribute("aria-expanded","false");
+}
 
-  openModal(
-    "Notificações",
-    '<div id="techna-notification-list" '+
-    'class="techna-notification-list">'+
-    '<p class="muted">Carregando notificações...</p>'+
-    '</div>'
-  );
+async function technaToggleNotifications(){
+  if(technaNotificationMenu){
+    technaCloseNotifications();
+    return;
+  }
 
-  const container=document.getElementById(
-    "techna-notification-list"
-  );
+  const button=technaPrepareBell();
+  const userId=state.user?.id;
+
+  if(!button||!userId)return;
+
+  const menu=document.createElement("div");
+  menu.className="techna-notification-menu";
+  menu.innerHTML=`
+    <h3>Notificações</h3>
+    <p class="techna-notification-empty">
+      Carregando notificações...
+    </p>
+  `;
+
+  document.body.appendChild(menu);
+  technaNotificationMenu=menu;
+  button.setAttribute("aria-expanded","true");
+
+  const rect=button.getBoundingClientRect();
+  const menuWidth=Math.min(380,window.innerWidth-24);
+
+  menu.style.top=`${Math.min(
+    rect.bottom+8,
+    window.innerHeight-90
+  )}px`;
+
+  menu.style.left=`${Math.max(
+    12,
+    Math.min(
+      rect.right-menuWidth,
+      window.innerWidth-menuWidth-12
+    )
+  )}px`;
 
   const result=await supabaseClient
     .from("notifications")
     .select(
-      "id,tipo,titulo,mensagem,entity_type,"+
-      "entity_id,lida,created_at"
+      "id,titulo,mensagem,lida,created_at"
     )
     .eq("user_id",userId)
     .order("created_at",{ascending:false})
     .limit(50);
 
-  if(!container?.isConnected||
-     state.user?.id!==userId)return;
+  if(!menu.isConnected||state.user?.id!==userId)return;
 
   if(result.error){
     console.error(
@@ -1890,84 +1931,65 @@ async function technaOpenNotifications(){
       result.error
     );
 
-    container.innerHTML=
-      '<p class="message">'+
-      'Não foi possível carregar as notificações.'+
-      '</p>';
-
+    menu.innerHTML=`
+      <h3>Notificações</h3>
+      <p class="techna-notification-empty">
+        Não foi possível carregar as notificações.
+      </p>
+    `;
     return;
   }
 
   const notifications=result.data||[];
 
-  container.innerHTML=notifications.length
-    ?notifications.map(item=>`
-      <button
-        type="button"
-        class="techna-notification
-               ${item.lida?"is-read":""}"
-        data-techna-notification-id="${esc(item.id)}"
-        data-techna-entity-type="${esc(item.entity_type||"")}"
-        data-techna-entity-id="${esc(item.entity_id||"")}">
-        <strong>
-          ${esc(item.titulo||"Notificação")}
-        </strong>
-        <span>
-          ${esc(item.mensagem||"")}
-        </span>
-        <small>
-          ${new Date(item.created_at).toLocaleString("pt-BR")}
-          ${item.lida?" · Lida":" · Nova"}
-        </small>
-      </button>
-    `).join("")
-    :'<p class="muted">'+
-     'Você ainda não tem notificações.'+
-     '</p>';
-}
+  menu.innerHTML=`
+    <h3>Notificações</h3>
+    ${
+      notifications.length
+        ?notifications.map(item=>`
+          <div class="techna-notification-item">
+            <strong>
+              ${esc(item.titulo||"Notificação")}
+            </strong>
+            <span>
+              ${esc(item.mensagem||"")}
+            </span>
+            <small>
+              ${new Date(item.created_at)
+                .toLocaleString("pt-BR")}
+            </small>
+          </div>
+        `).join("")
+        :`<p class="techna-notification-empty">
+            Você ainda não tem notificações.
+          </p>`
+    }
+  `;
 
-document.addEventListener("click",async event=>{
-  const notification=event.target.closest(
-    "[data-techna-notification-id]"
-  );
+  const unreadIds=notifications
+    .filter(item=>!item.lida)
+    .map(item=>item.id);
 
-  if(notification){
-    event.preventDefault();
-    event.stopImmediatePropagation();
-
-    if(!state.user)return;
-
-    const id=notification.dataset.technaNotificationId;
-    const entityType=notification.dataset.technaEntityType;
-    const entityId=notification.dataset.technaEntityId;
-
-    const result=await supabaseClient
+  if(unreadIds.length){
+    const update=await supabaseClient
       .from("notifications")
       .update({lida:true})
-      .eq("id",id)
-      .eq("user_id",state.user.id);
+      .eq("user_id",userId)
+      .in("id",unreadIds);
 
-    if(result.error){
-      console.error(result.error);
-      showToast(
-        "Não foi possível marcar a notificação como lida."
+    if(update.error){
+      console.error(
+        "Erro ao marcar notificações como lidas:",
+        update.error
       );
-      return;
-    }
-
-    await technaRefreshBell();
-
-    if(entityType==="project"&&entityId){
-      closeModal();
-      await loadData();
-      await openProject(entityId);
     }else{
-      await technaOpenNotifications();
+      await technaRefreshBell();
     }
-
-    return;
   }
+}
 
+/* Impede a mensagem fixa do botão antigo. */
+document.addEventListener("click",event=>{
   const bell=event.target.closest(
     '[data-action="notifications"]'
   );
@@ -1975,9 +1997,32 @@ document.addEventListener("click",async event=>{
   if(bell){
     event.preventDefault();
     event.stopImmediatePropagation();
-    await technaOpenNotifications();
+    technaToggleNotifications();
+    return;
+  }
+
+  if(
+    technaNotificationMenu &&
+    !event.target.closest(".techna-notification-menu")
+  ){
+    technaCloseNotifications();
   }
 },true);
+
+/* O site recria o cabeçalho em renderApp().
+   Prepara o sino imediatamente após cada reconstrução. */
+const technaOriginalRenderApp=renderApp;
+
+renderApp=function(...args){
+  technaCloseNotifications();
+
+  const result=technaOriginalRenderApp.apply(this,args);
+
+  technaPrepareBell();
+  technaRefreshBell();
+
+  return result;
+};
 
 technaPrepareBell();
 technaRefreshBell();
