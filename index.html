@@ -2297,15 +2297,13 @@ function termsPage() {
   `);
 }
 async function trashPage() {
-  const result = await supabaseClient
+  const ownedResult = await supabaseClient
     .from("projects")
     .select("id,titulo,descricao,deleted_at")
-    .eq("autora_id", state.user.id)
-    .not("deleted_at", "is", null)
-    .order("deleted_at", {ascending:false});
+    .eq("autora_id", state.user.id);
 
-  if (result.error) {
-    console.error("Erro ao carregar lixeira:", result.error);
+  if (ownedResult.error) {
+    console.error("Erro ao carregar lixeira:", ownedResult.error);
     frame(`
       <section class="techna-trash-page">
         <p class="message">Não foi possível carregar a lixeira.</p>
@@ -2314,25 +2312,70 @@ async function trashPage() {
     return;
   }
 
-  const projects = result.data || [];
+  const ownedProjects = ownedResult.data || [];
+  const deletedProjects = ownedProjects
+    .filter(project => project.deleted_at)
+    .sort((a, b) =>
+      new Date(b.deleted_at) - new Date(a.deleted_at)
+    );
+
+  let deletedImages = [];
+
+  if (ownedProjects.length) {
+    const imagesResult = await supabaseClient
+      .from("project_images")
+      .select("id,project_id,arquivo_url,deleted_at")
+      .in(
+        "project_id",
+        ownedProjects.map(project => project.id)
+      )
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+
+    if (imagesResult.error) {
+      console.error(
+        "Erro ao carregar fotos da lixeira:",
+        imagesResult.error
+      );
+      frame(`
+        <section class="techna-trash-page">
+          <p class="message">
+            Não foi possível carregar as fotos da lixeira.
+          </p>
+        </section>
+      `);
+      return;
+    }
+
+    deletedImages = imagesResult.data || [];
+  }
+
+  const projectTitle = new Map(
+    ownedProjects.map(project => [
+      String(project.id),
+      project.titulo
+    ])
+  );
 
   frame(`
     <section class="techna-trash-page">
       <p class="muted">
-        Projetos na lixeira não aparecem nas listas normais.
-        Você pode restaurá-los quando quiser.
+        Projetos e fotos removidos aparecem aqui.
+        Você pode restaurá-los.
       </p>
 
+      <h2>Projetos</h2>
       ${
-        projects.length
-          ? projects.map(project => `
+        deletedProjects.length
+          ? deletedProjects.map(project => `
               <article class="techna-trash-item">
                 <div>
-                  <h2>${esc(project.titulo)}</h2>
+                  <h3>${esc(project.titulo)}</h3>
                   <p>${esc(project.descricao || "")}</p>
                   <small class="muted">
                     Movido para a lixeira em
-                    ${new Date(project.deleted_at).toLocaleString("pt-BR")}
+                    ${new Date(project.deleted_at)
+                      .toLocaleString("pt-BR")}
                   </small>
                 </div>
 
@@ -2340,14 +2383,72 @@ async function trashPage() {
                         class="btn btn-secondary"
                         data-action="restore-project"
                         data-project="${esc(project.id)}">
-                  Restaurar
+                  Restaurar projeto
                 </button>
               </article>
             `).join("")
-          : `<p class="muted">Sua lixeira está vazia.</p>`
+          : `<p class="muted">Nenhum projeto na lixeira.</p>`
+      }
+
+      <h2>Fotos</h2>
+      ${
+        deletedImages.length
+          ? deletedImages.map(image => `
+              <article class="techna-trash-item">
+                <div>
+                  <img
+                    src="${esc(image.arquivo_url)}"
+                    alt="Foto removida do projeto"
+                    style="max-width:180px;max-height:120px;
+                           object-fit:cover;border-radius:10px;">
+
+                  <p>
+                    Projeto:
+                    ${esc(
+                      projectTitle.get(String(image.project_id))
+                      || "Projeto"
+                    )}
+                  </p>
+
+                  <small class="muted">
+                    Movida para a lixeira em
+                    ${new Date(image.deleted_at)
+                      .toLocaleString("pt-BR")}
+                  </small>
+                </div>
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-action="restore-image"
+                        data-image="${esc(image.id)}"
+                        data-project="${esc(image.project_id)}">
+                  Restaurar foto
+                </button>
+              </article>
+            `).join("")
+          : `<p class="muted">Nenhuma foto na lixeira.</p>`
       }
     </section>
   `);
+}
+async function restoreImage(imageId, projectId) {
+  const result = await supabaseClient
+    .from("project_images")
+    .update({ deleted_at: null })
+    .eq("id", imageId)
+    .eq("project_id", projectId)
+    .not("deleted_at", "is", null)
+    .select("id")
+    .single();
+
+  if (result.error) {
+    console.error("Erro ao restaurar foto:", result.error);
+    showToast("Não foi possível restaurar a foto.");
+    return;
+  }
+
+  showToast("Foto restaurada para o álbum do projeto.");
+  await trashPage();
 }
 
 async function restoreProject(id) {
@@ -3147,6 +3248,7 @@ async function setupProjectAlbumEditor(project){
     .from("project_images")
     .select("id,arquivo_url,ordem")
     .eq("project_id",project.id)
+    .is("deleted_at",null)
     .order("ordem",{ascending:true});
 
   const container=document.getElementById("edit-project-album");
@@ -3279,23 +3381,20 @@ async function saveProjectEdit(e){
   try{
     let ordem=0;
 
-    for(const image of album.images){
-      if(image.removed||!image.file)continue;
-
-      const uploadedUrl=await uploadProjectCover(image.file);
+      for(const image of album.images){
+      if(!image.removed||!image.id)continue;
 
       const result=await supabaseClient
         .from("project_images")
-        .insert({
-          project_id:id,
-          uploaded_by:state.user.id,
-          arquivo_url:uploadedUrl,
-          ordem:ordem++
-        })
+        .update({deleted_at:new Date().toISOString()})
+        .eq("id",image.id)
+        .eq("project_id",id)
+        .is("deleted_at",null)
         .select("id")
         .single();
 
       if(result.error)throw result.error;
+    }
 
       if(album.coverUrl===image.url){
         album.coverUrl=uploadedUrl;
@@ -3976,6 +4075,9 @@ document.addEventListener("click",async e=>{
     }
 
     if(n==="edit-profile")profileModal();
+    if(n==="restore-image"){
+      await restoreImage(a.dataset.image, a.dataset.project);
+    }
     if(n==="participating-projects"){
       showToast("A lista de projetos que você participa será adicionada em uma próxima etapa.");
     }
