@@ -996,90 +996,142 @@ z-index:40;
     max-width: none;
   }
 }
-/* Cabeçalho mobile: duas linhas organizadas */
+/* Menu hambúrguer: visível somente no celular */
+.techna-mobile-menu-button {
+  display: none;
+}
+
 @media (max-width: 620px) {
   .techna-header {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 8px 10px;
-    padding: 10px 14px 6px;
+    gap: 8px;
+    min-height: 60px;
+    padding: 8px 12px;
   }
 
   .techna-header .brand {
-    min-width: 0;
-    gap: 8px;
-  }
-
-  .techna-header-actions {
-    grid-column: 2;
-    grid-row: 1;
-    display: flex;
-    justify-content: flex-end;
-    gap: 7px;
-    min-width: 0;
-    margin: 0;
-  }
-
-  .techna-header-nav {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    padding: 0 0 3px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .techna-header-nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .techna-header-nav > button,
-  .techna-more-trigger {
     flex: 0 0 auto;
-    min-height: 38px;
-    padding: 7px 10px;
-    font-size: .85rem;
+    min-width: 0;
+    gap: 6px;
   }
 
   .techna-header .brand-mark {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    font-size: 19px;
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
   }
 
   .techna-header .brand-name {
-    font-size: 1rem;
+    font-size: .9rem;
+  }
+
+  .techna-header-actions {
+    display: flex;
+    flex: 0 0 auto;
+    order: 2;
+    gap: 5px;
+    width: auto;
+    min-width: 0;
+    margin-left: auto;
   }
 
   .techna-search,
   .techna-header-actions > .icon-btn,
   .techna-profile-trigger {
-    width: 38px;
-    min-width: 38px;
-    height: 38px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
   }
 
   .techna-search {
-    padding: 0 7px;
+    padding: 0 5px;
   }
 
   .techna-search span {
-    font-size: 22px;
+    font-size: 21px;
   }
 
   .techna-profile-trigger .avatar {
-    width: 32px;
-    height: 32px;
+    width: 29px;
+    height: 29px;
+  }
+
+  .techna-mobile-menu-button {
+    display: grid;
+    flex: 0 0 34px;
+    order: 3;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    padding: 0;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.3);
+    border-radius: 9px;
+    background: rgba(255,255,255,.12);
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .techna-header-nav {
+    position: absolute;
+    top: 100%;
+    right: 12px;
+    left: 12px;
+    z-index: 50;
+    display: none;
+    width: auto;
+    max-width: none;
+    max-height: calc(100dvh - 75px);
+    padding: 8px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 14px 32px rgba(49,16,71,.22);
+  }
+
+  .techna-header-nav.is-open {
+    display: block;
+  }
+
+  .techna-header-nav > button,
+  .techna-header-nav .techna-more-trigger {
+    display: block;
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    color: var(--p);
+    text-align: left;
+    white-space: normal;
+  }
+
+  .techna-header-nav .techna-more {
+    width: 100%;
+  }
+
+  .techna-header-nav .techna-more-menu {
+    position: static;
+    display: block;
+    min-width: 0;
+    padding: 0 0 0 10px;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .techna-header-nav .techna-more-trigger {
+    display: none;
+  }
+
+  .techna-search:focus-within {
+    position: absolute;
+    right: 12px;
+    left: 12px;
+    z-index: 60;
+    width: auto;
+    background: #fff;
   }
 }
 
