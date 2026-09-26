@@ -3233,34 +3233,46 @@ async function saveProjectEdit(e){
     button.disabled=false;
   }
 }
-async function deleteProject(project){
-  if(!project||!state.user||
-     String(project.autora_id)!==String(state.user.id)){
-    showToast("Você não tem permissão para excluir este projeto.");
+async function deleteProject(project) {
+  if (
+    !project ||
+    !state.user ||
+    String(project.autora_id) !== String(state.user.id)
+  ) {
+    showToast("Você não tem permissão para mover este projeto.");
     return;
   }
 
-  const confirmed=window.confirm(
-    `Excluir definitivamente o projeto “${project.titulo}”? Esta ação não pode ser desfeita.`
+  const confirmed = window.confirm(
+    `Mover o projeto “${project.titulo}” para a lixeira? ` +
+    "Você poderá restaurá-lo depois."
   );
 
-  if(!confirmed)return;
+  if (!confirmed) return;
 
-  const r=await supabaseClient
+  const result = await supabaseClient
     .from("projects")
-    .delete()
-    .eq("id",project.id)
-    .eq("autora_id",state.user.id);
+    .update({deleted_at: new Date().toISOString()})
+    .eq("id", project.id)
+    .eq("autora_id", state.user.id)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
 
-  if(r.error){
-    showToast(authError(r.error));
+  if (result.error) {
+    showToast(authError(result.error));
+    return;
+  }
+
+  if (!result.data) {
+    showToast("Não foi possível mover o projeto para a lixeira.");
     return;
   }
 
   closeModal();
   await loadData();
   await goPage(state.page);
-  showToast("Projeto excluído.");
+  showToast("Projeto movido para a lixeira.");
 }
 async function toggleProjectLike(projectId){
   if(!state.user){
