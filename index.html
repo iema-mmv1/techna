@@ -3509,10 +3509,11 @@ async function deleteProject(project) {
     return;
   }
 
-  const confirmed = window.confirm(
-    `Mover o projeto “${project.titulo}” para a lixeira? ` +
-    "Você poderá restaurá-lo depois."
-  );
+    const confirmed = await showConfirmation({
+    title: "Mover projeto para a lixeira?",
+    message: `Tem certeza que deseja mover o projeto “${project.titulo}” para a lixeira? Você poderá restaurá-lo depois.`,
+    confirmText: "Mover para a lixeira"
+  });
 
   if (!confirmed) return;
 
