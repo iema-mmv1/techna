@@ -2117,9 +2117,132 @@ async function getActivities(){
       (a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)
     );
 }
-async function dashboard(){const ps=state.projects.filter(
-  project=>String(project.autora_id)===String(state.user?.id)
-),activities=state.projects.length?await getActivities():[],feed=activities.length?activities:demoNews;frame(`<div class="stats"><article class="stat"><small>Meus projetos</small><b>${ps.length}</b></article><article class="stat"><small>Projetos concluídos</small><b>${ps.filter(p=>p.status==="concluido").length}</b></article><article class="stat"><small>Em acompanhamento</small><b>0</b></article><article class="stat"><small>Convites</small><b>0</b></article><article class="stat"><small>Progresso médio</small><b>${ps.length?Math.round(ps.reduce((a,p)=>a+Number(p.progresso||0),0)/ps.length):0}%</b></article></div><div class="dash-grid"><section class="card wide"><div class="card-head"><h2>Notícias em destaque</h2><p>Atualizações da comunidade TECHNA.</p></div>${renderNewsCarousel(feed.slice(0,8))}</section><section class="card wide"><div class="card-head"><h2>Projetos recentes</h2><button class="btn btn-ghost" data-page="projects">Ver todos</button></div><div class="horizontal">${state.projects.slice(0,8).map(p => projectCard(p, false)).join("")}</div></section><section class="card wide"><div class="card-head"><h2>Meus projetos</h2><button class="btn btn-primary" data-action="new-project">Novo projeto</button></div><div class="horizontal">${ps.slice(0,4).map(p => projectCard(p, true)).join("")}</div></section></div>`);initCarousel()}
+async function dashboard(){
+  const userId=state.user?.id;
+  const meusProjetos=state.projects.filter(
+    project=>String(project.autora_id)===String(userId)
+  );
+
+  const membrosResult=await supabaseClient
+    .from("project_members")
+    .select("project_id")
+    .eq("user_id",userId);
+
+  if(membrosResult.error){
+    console.error(
+      "Erro ao carregar projetos em acompanhamento:",
+      membrosResult.error
+    );
+  }
+
+  const projetosComoMembro=new Set(
+    (membrosResult.data||[]).map(
+      membro=>String(membro.project_id)
+    )
+  );
+
+  const acompanhamentos=state.projects.filter(
+    project=>
+      String(project.autora_id)!==String(userId) &&
+      projetosComoMembro.has(String(project.id))
+  );
+
+  const activities=state.projects.length
+    ?await getActivities()
+    :[];
+  const feed=activities.length?activities:demoNews;
+
+  frame(`
+    <div class="stats">
+      <article class="stat">
+        <small>Meus projetos</small>
+        <b>${meusProjetos.length}</b>
+      </article>
+
+      <article class="stat">
+        <small>Projetos concluídos</small>
+        <b>${
+          meusProjetos.filter(
+            project=>project.status==="concluido"
+          ).length
+        }</b>
+      </article>
+
+      <button type="button"
+              class="stat"
+              data-action="dashboard-acompanhamentos"
+              style="text-align:left;cursor:pointer;">
+        <small>Em acompanhamento</small>
+        <b>${acompanhamentos.length}</b>
+      </button>
+
+      <article class="stat">
+        <small>Convites</small>
+        <b>0</b>
+      </article>
+
+      <article class="stat">
+        <small>Progresso médio</small>
+        <b>${
+          meusProjetos.length
+            ?Math.round(
+              meusProjetos.reduce(
+                (total,project)=>
+                  total+Number(project.progresso||0),
+                0
+              )/meusProjetos.length
+            )
+            :0
+        }%</b>
+      </article>
+    </div>
+
+    <div class="dash-grid">
+      <section class="card wide">
+        <div class="card-head">
+          <h2>Notícias em destaque</h2>
+          <p>Atualizações da comunidade TECHNA.</p>
+        </div>
+        ${renderNewsCarousel(feed.slice(0,8))}
+      </section>
+
+      <section class="card wide">
+        <div class="card-head">
+          <h2>Projetos recentes</h2>
+          <button class="btn btn-ghost" data-page="projects">
+            Ver todos
+          </button>
+        </div>
+        <div class="horizontal">
+          ${
+            state.projects.slice(0,8)
+              .map(project=>projectCard(project,false))
+              .join("")
+          }
+        </div>
+      </section>
+
+      <section class="card wide">
+        <div class="card-head">
+          <h2>Meus projetos</h2>
+          <button class="btn btn-primary"
+                  data-action="new-project">
+            Novo projeto
+          </button>
+        </div>
+        <div class="horizontal">
+          ${
+            meusProjetos.slice(0,4)
+              .map(project=>projectCard(project,true))
+              .join("")
+          }
+        </div>
+      </section>
+    </div>
+  `);
+
+  initCarousel();
+}
 async function projectsPage(){frame(`<section class="card"><div class="card-head"><h2>Projetos</h2><button class="btn btn-primary" data-action="new-project">Novo projeto</button></div><div class="project-grid">${dataProjects().map(projectCard).join("")}</div></section>`)}async function newsPage(){const activities=state.projects.length?await getActivities():[],feed=activities.length?activities:demoNews;frame(`<section class="card"><div class="card-head"><h2>Notícias</h2><p>Projetos novos e atualizações da comunidade.</p></div><div class="horizontal">${feed.map(n=>n.project_id?activityCard(n):newsCard(n)).join("")}</div></section>`)}function profilePage(){const p=state.profile||{};frame(`<section class="card"><div class="profile-head">${avatar(p,true)}<div><h2>${esc(p.nome||"Usuário")}</h2><p class="muted">${esc(p.username||"usuário")} · ${esc(p.curso||"Sem curso")}</p><button class="btn btn-primary" data-action="edit-profile">Editar meu perfil</button></div></div></section>`)}function simplePage(){frame(`<section class="card"><h2>${titleData()[0]}</h2><div class="empty">Esta área está pronta para receber os dados do Supabase.</div></section>`)}
 function aboutPage() {
   frame(`
@@ -4276,6 +4399,58 @@ document.addEventListener("click",async e=>{
 
   if(a){
     const n=a.dataset.action;
+    if(n==="dashboard-acompanhamentos" ||
+       n==="participating-projects"){
+      const result=await supabaseClient
+        .from("project_members")
+        .select("project_id")
+        .eq("user_id",state.user.id);
+
+      if(result.error){
+        console.error(
+          "Erro ao carregar acompanhamentos:",
+          result.error
+        );
+        showToast(
+          "Não foi possível carregar os projetos em acompanhamento."
+        );
+        return;
+      }
+
+      const projectIds=new Set(
+        (result.data||[]).map(
+          member=>String(member.project_id)
+        )
+      );
+
+      const projects=state.projects.filter(
+        project=>
+          String(project.autora_id)!==String(state.user.id) &&
+          projectIds.has(String(project.id))
+      );
+
+      openModal("Em acompanhamento",`
+        <p class="muted">
+          Projetos de outras pessoas dos quais você participa.
+        </p>
+        ${
+          projects.length
+            ?`<div class="project-grid">
+                ${
+                  projects.map(
+                    project=>projectCard(project,false)
+                  ).join("")
+                }
+              </div>`
+            :`<p class="empty">
+                Você ainda não participa de projetos
+                de outras pessoas.
+              </p>`
+        }
+      `);
+      return;
+    }
+    
     if(n==="mobile-menu"){
       const nav=document.querySelector(".techna-header-nav");
       const aberto=nav?.classList.toggle("is-open")||false;
@@ -4350,9 +4525,6 @@ document.addEventListener("click",async e=>{
     if(n==="edit-profile")profileModal();
     if(n==="restore-image"){
       await restoreImage(a.dataset.image, a.dataset.project);
-    }
-    if(n==="participating-projects"){
-      showToast("A lista de projetos que você participa será adicionada em uma próxima etapa.");
     }
     if(n==="send-password-reset")sendPasswordReset();
 
