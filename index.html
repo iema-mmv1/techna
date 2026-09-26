@@ -4597,33 +4597,15 @@ async function technaToggleNotifications(){
   `;
 
   document.body.appendChild(menu);
-  technaNotificationMenu=menu;
-  menu.addEventListener("mouseenter",()=>{
-    technaCancelBellHoverClose();
-  });
+technaNotificationMenu=menu;
+button.setAttribute("aria-expanded","true");
 
-  menu.addEventListener("mouseleave",()=>{
-    technaScheduleBellHoverClose();
-  });
-  button.setAttribute("aria-expanded","true");
+menu.style.top=`${
+  document.querySelector(".techna-header")
+    ?.getBoundingClientRect().bottom ?? 76
+}px`;
 
-  const rect=button.getBoundingClientRect();
-  const menuWidth=Math.min(380,window.innerWidth-24);
-
-  menu.style.top=`${Math.min(
-    rect.bottom+8,
-    window.innerHeight-90
-  )}px`;
-
-  menu.style.left=`${Math.max(
-    12,
-    Math.min(
-      rect.right-menuWidth,
-      window.innerWidth-menuWidth-12
-    )
-  )}px`;
-
-  const result=await supabaseClient
+const result=await supabaseClient
     .from("notifications")
     .select(
       "id,titulo,mensagem,lida,created_at"
