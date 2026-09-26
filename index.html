@@ -1765,7 +1765,63 @@ function initCarousel(){
 
   startCarousel();
 }
-function titleData(){return{dashboard:["Olá, "+(state.profile?.nome?.split(" ")[0]||"estudante")+"!","Bem-vindo ao seu espaço de projetos."],projects:["Projetos","Crie, explore e acompanhe projetos."],news:["Notícias","Acompanhe o que está acontecendo na TECHNA."],favorites:["Favoritos","Consulte seus conteúdos salvos."],voting:["Destaque do mês","A comunidade escolhe em conjunto."],suggestions:["Sugestões","Sua ideia pode melhorar a plataforma."],profile:["Meu perfil","Gerencie suas informações e seu avatar."],teacher:["Área dos professores","Acompanhe orientações e colaborações."],admin:["Administração","Gestão e moderação da plataforma."]}[state.page]}function frame(html){const [title,subtitle]=titleData();document.getElementById("pageTitle").textContent=title;document.getElementById("pageSubtitle").textContent=subtitle;document.getElementById("pageContent").innerHTML=html}
+function titleData() {
+  return {
+    dashboard: [
+      "Olá, " + (state.profile?.nome?.split(" ")[0] || "estudante") + "!",
+      "Bem-vindo ao seu espaço de projetos."
+    ],
+    projects: [
+      "Projetos",
+      "Crie, explore e acompanhe projetos."
+    ],
+    news: [
+      "Notícias",
+      "Acompanhe o que está acontecendo na TECHNA."
+    ],
+    favorites: [
+      "Favoritos",
+      "Consulte seus conteúdos salvos."
+    ],
+    voting: [
+      "Destaque do mês",
+      "A comunidade escolhe em conjunto."
+    ],
+    suggestions: [
+      "Sugestões",
+      "Sua ideia pode melhorar a plataforma."
+    ],
+    profile: [
+      "Meu perfil",
+      "Gerencie suas informações e seu avatar."
+    ],
+    teacher: [
+      "Área dos professores",
+      "Acompanhe orientações e colaborações."
+    ],
+    admin: [
+      "Administração",
+      "Gestão e moderação da plataforma."
+    ],
+    about: [
+      "Sobre o TECHNA",
+      "Conheça a ideia por trás do projeto."
+    ],
+    team: [
+      "Nossa equipe",
+      "Conheça quem desenvolveu e orientou o TECHNA."
+    ],
+    privacy: [
+      "Privacidade e LGPD",
+      "Informações sobre o uso de dados."
+    ],
+    terms: [
+      "Termos de uso",
+      "Orientações para usar a plataforma."
+    ]
+  }[state.page];
+}
+function frame(html){const [title,subtitle]=titleData();document.getElementById("pageTitle").textContent=title;document.getElementById("pageSubtitle").textContent=subtitle;document.getElementById("pageContent").innerHTML=html}
 async function getActivities(){
   let updates=[];
 
@@ -1838,7 +1894,94 @@ async function getActivities(){
 async function dashboard(){const ps=state.projects.filter(
   project=>String(project.autora_id)===String(state.user?.id)
 ),activities=state.projects.length?await getActivities():[],feed=activities.length?activities:demoNews;frame(`<div class="stats"><article class="stat"><small>Meus projetos</small><b>${ps.length}</b></article><article class="stat"><small>Em acompanhamento</small><b>0</b></article><article class="stat"><small>Convites</small><b>0</b></article><article class="stat"><small>Progresso médio</small><b>${ps.length?Math.round(ps.reduce((a,p)=>a+Number(p.progresso||0),0)/ps.length):0}%</b></article></div><div class="dash-grid"><section class="card wide"><div class="card-head"><h2>Notícias em destaque</h2><p>Atualizações da comunidade TECHNA.</p></div>${renderNewsCarousel(feed.slice(0,8))}</section><section class="card wide"><div class="card-head"><h2>Projetos recentes</h2><button class="btn btn-ghost" data-page="projects">Ver todos</button></div><div class="horizontal">${ps.slice(0,8).map(projectCard).join("")}</div></section><section class="card wide"><div class="card-head"><h2>Meus projetos</h2><button class="btn btn-primary" data-action="new-project">Novo projeto</button></div><div class="horizontal">${ps.slice(0,4).map(projectCard).join("")}</div></section></div>`);initCarousel()}
-async function projectsPage(){frame(`<section class="card"><div class="card-head"><h2>Projetos</h2><button class="btn btn-primary" data-action="new-project">Novo projeto</button></div><div class="project-grid">${dataProjects().map(projectCard).join("")}</div></section>`)}async function newsPage(){const activities=state.projects.length?await getActivities():[],feed=activities.length?activities:demoNews;frame(`<section class="card"><div class="card-head"><h2>Notícias</h2><p>Projetos novos e atualizações da comunidade.</p></div><div class="horizontal">${feed.map(n=>n.project_id?activityCard(n):newsCard(n)).join("")}</div></section>`)}function profilePage(){const p=state.profile||{};frame(`<section class="card"><div class="profile-head">${avatar(p,true)}<div><h2>${esc(p.nome||"Usuário")}</h2><p class="muted">${esc(p.username||"usuário")} · ${esc(p.curso||"Sem curso")}</p><button class="btn btn-primary" data-action="edit-profile">Editar meu perfil</button></div></div></section>`)}function simplePage(){frame(`<section class="card"><h2>${titleData()[0]}</h2><div class="empty">Esta área está pronta para receber os dados do Supabase.</div></section>`)}async function goPage(page){state.page=page;await({dashboard,projects:projectsPage,news:newsPage,profile:profilePage,favorites:simplePage,voting:simplePage,suggestions:simplePage,teacher:simplePage,admin:simplePage}[page]||dashboard)()}
+async function projectsPage(){frame(`<section class="card"><div class="card-head"><h2>Projetos</h2><button class="btn btn-primary" data-action="new-project">Novo projeto</button></div><div class="project-grid">${dataProjects().map(projectCard).join("")}</div></section>`)}async function newsPage(){const activities=state.projects.length?await getActivities():[],feed=activities.length?activities:demoNews;frame(`<section class="card"><div class="card-head"><h2>Notícias</h2><p>Projetos novos e atualizações da comunidade.</p></div><div class="horizontal">${feed.map(n=>n.project_id?activityCard(n):newsCard(n)).join("")}</div></section>`)}function profilePage(){const p=state.profile||{};frame(`<section class="card"><div class="profile-head">${avatar(p,true)}<div><h2>${esc(p.nome||"Usuário")}</h2><p class="muted">${esc(p.username||"usuário")} · ${esc(p.curso||"Sem curso")}</p><button class="btn btn-primary" data-action="edit-profile">Editar meu perfil</button></div></div></section>`)}function simplePage(){frame(`<section class="card"><h2>${titleData()[0]}</h2><div class="empty">Esta área está pronta para receber os dados do Supabase.</div></section>`)}
+function aboutPage() {
+  frame(`
+    <article class="card techna-info-page">
+      <h2>O que é o TECHNA?</h2>
+      <p>
+        O TECHNA é uma plataforma para apresentar, compartilhar e
+        acompanhar projetos desenvolvidos pela comunidade estudantil.
+      </p>
+
+      <h3>Qual é a finalidade?</h3>
+      <p>
+        Dar visibilidade às ideias dos estudantes e criar um espaço
+        onde projetos, atualizações e oportunidades de participação
+        possam ser encontrados em um só lugar.
+      </p>
+
+      <h3>Como surgiu?</h3>
+      <p>
+        O projeto foi pensado como uma forma de mostrar, na prática,
+        o que estudantes de Informática para Internet podem criar.
+        Sua apresentação na Feira das Profissões ajuda o público a
+        conhecer tanto a plataforma quanto o trabalho da turma.
+      </p>
+    </article>
+  `);
+}
+
+function teamPage() {
+  frame(`
+    <article class="card techna-info-page">
+      <h2>Alunos desenvolvedores</h2>
+      <p>
+        Os nomes e as fotos serão adicionados após a confirmação
+        da equipe.
+      </p>
+
+      <div class="techna-team-grid">
+        <div class="techna-team-member">
+          <span class="techna-team-avatar" aria-hidden="true">👤</span>
+          <strong>Nome do aluno</strong>
+        </div>
+        <div class="techna-team-member">
+          <span class="techna-team-avatar" aria-hidden="true">👤</span>
+          <strong>Nome do aluno</strong>
+        </div>
+        <div class="techna-team-member">
+          <span class="techna-team-avatar" aria-hidden="true">👤</span>
+          <strong>Nome do aluno</strong>
+        </div>
+      </div>
+
+      <h3>Professor orientador</h3>
+      <div class="techna-team-grid">
+        <div class="techna-team-member">
+          <span class="techna-team-avatar" aria-hidden="true">👤</span>
+          <strong>Nome do professor</strong>
+        </div>
+      </div>
+    </article>
+  `);
+}
+
+function privacyPage() {
+  frame(`
+    <article class="card techna-info-page">
+      <h2>Privacidade e LGPD</h2>
+      <p class="techna-draft-note">
+        Página em elaboração. A política de privacidade será publicada
+        após a conferência das informações sobre os dados utilizados
+        pelo TECHNA e dos responsáveis pelo projeto.
+      </p>
+    </article>
+  `);
+}
+
+function termsPage() {
+  frame(`
+    <article class="card techna-info-page">
+      <h2>Termos de uso</h2>
+      <p class="techna-draft-note">
+        Página em elaboração. As regras de participação e publicação
+        serão disponibilizadas aqui após revisão.
+      </p>
+    </article>
+  `);
+}
+async function goPage(page){state.page=page;await({dashboard,projects:projectsPage,news:newsPage,profile:profilePage,favorites:simplePage,voting:simplePage,suggestions:simplePage,teacher:simplePage,admin:simplePage}[page]||dashboard)()}
 function renderApp(){
   const p=state.profile;
 
@@ -1936,8 +2079,32 @@ function renderApp(){
             <p id="pageSubtitle"></p>
           </div>
         </div>
-        <section id="pageContent"></section>
+                <section id="pageContent"></section>
       </main>
+
+      <footer class="techna-footer" aria-label="Informações sobre o TECHNA">
+        <div class="techna-footer-inner">
+          <div class="techna-footer-brand">
+            <strong>TECHNA</strong>
+            <small>Ideias que se conectam.</small>
+          </div>
+
+          <nav class="techna-footer-links" aria-label="Links informativos">
+            <button type="button" data-page="about">
+              Sobre o TECHNA
+            </button>
+            <button type="button" data-page="team">
+              Nossa equipe
+            </button>
+            <button type="button" data-page="privacy">
+              Privacidade e LGPD
+            </button>
+            <button type="button" data-page="terms">
+              Termos de uso
+            </button>
+          </nav>
+        </div>
+      </footer>
     </div>
   `;
   window.technaHeaderSizeObserver?.disconnect();
