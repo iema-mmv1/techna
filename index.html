@@ -2119,19 +2119,40 @@ async function getActivities(){
 }
 async function dashboard(){
   const userId=state.user?.id;
+
   const meusProjetos=state.projects.filter(
     project=>String(project.autora_id)===String(userId)
   );
 
-  const membrosResult=await supabaseClient
-    .from("project_members")
-    .select("project_id")
-    .eq("user_id",userId);
+  const [membrosResult,pedidosResult]=await Promise.all([
+    supabaseClient
+      .from("project_members")
+      .select("project_id")
+      .eq("user_id",userId),
+
+    meusProjetos.length
+      ?supabaseClient
+        .from("project_participation_requests")
+        .select("id,project_id")
+        .eq("status","pendente")
+        .in(
+          "project_id",
+          meusProjetos.map(project=>project.id)
+        )
+      :Promise.resolve({data:[],error:null})
+  ]);
 
   if(membrosResult.error){
     console.error(
       "Erro ao carregar projetos em acompanhamento:",
       membrosResult.error
+    );
+  }
+
+  if(pedidosResult.error){
+    console.error(
+      "Erro ao carregar pedidos de participação:",
+      pedidosResult.error
     );
   }
 
@@ -2146,6 +2167,8 @@ async function dashboard(){
       String(project.autora_id)!==String(userId) &&
       projetosComoMembro.has(String(project.id))
   );
+
+  const pedidosPendentes=pedidosResult.data||[];
 
   const activities=state.projects.length
     ?await getActivities()
@@ -2173,7 +2196,23 @@ async function dashboard(){
               data-action="dashboard-acompanhamentos"
               style="text-align:left;cursor:pointer;">
         <small>Em acompanhamento</small>
-        <b>${acompanhamentos.length}</b>
+        <b>${
+          membrosResult.error
+            ?"—"
+            :acompanhamentos.length
+        }</b>
+      </button>
+
+      <button type="button"
+              class="stat"
+              data-action="dashboard-pedidos"
+              style="text-align:left;cursor:pointer;">
+        <small>Pedidos de participação</small>
+        <b>${
+          pedidosResult.error
+            ?"—"
+            :pedidosPendentes.length
+        }</b>
       </button>
 
       <article class="stat">
@@ -4389,7 +4428,7 @@ document.addEventListener("click",async e=>{
     oauth(o.dataset.oauth);
   }
 
-  if(t){
+    if(t){
     const i=document.getElementById(t.dataset.togglePassword);
 
     if(i){
@@ -4399,6 +4438,7 @@ document.addEventListener("click",async e=>{
 
   if(a){
     const n=a.dataset.action;
+
     if(n==="dashboard-acompanhamentos" ||
        n==="participating-projects"){
       const result=await supabaseClient
@@ -4450,7 +4490,87 @@ document.addEventListener("click",async e=>{
       `);
       return;
     }
-    
+
+    if(n==="dashboard-pedidos"){
+      const meusProjetos=state.projects.filter(
+        project=>
+          String(project.autora_id)===String(state.user.id)
+      );
+
+      if(!meusProjetos.length){
+        openModal(
+          "Pedidos de participação",
+          `<p class="empty">
+             Você ainda não tem projetos com pedidos de participação.
+           </p>`
+        );
+        return;
+      }
+
+      const result=await supabaseClient
+        .from("project_participation_requests")
+        .select("id,project_id")
+        .eq("status","pendente")
+        .in(
+          "project_id",
+          meusProjetos.map(project=>project.id)
+        );
+
+      if(result.error){
+        console.error(
+          "Erro ao carregar pedidos de participação:",
+          result.error
+        );
+        showToast(
+          "Não foi possível carregar os pedidos de participação."
+        );
+        return;
+      }
+
+      const quantidadePorProjeto=new Map();
+
+      for(const pedido of result.data||[]){
+        const id=String(pedido.project_id);
+        quantidadePorProjeto.set(
+          id,
+          (quantidadePorProjeto.get(id)||0)+1
+        );
+      }
+
+      const projetosComPedidos=meusProjetos.filter(
+        project=>
+          quantidadePorProjeto.has(String(project.id))
+      );
+
+      openModal("Pedidos de participação",`
+        <p class="muted">
+          Abra um projeto para aceitar ou recusar os pedidos.
+        </p>
+
+        ${
+          projetosComPedidos.length
+            ?`<div class="project-grid">
+                ${projetosComPedidos.map(project=>`
+                  <div>
+                    <p>
+                      <strong>${esc(project.titulo)}</strong>:
+                      ${
+                        quantidadePorProjeto.get(
+                          String(project.id)
+                        )
+                      } pedido(s) pendente(s)
+                    </p>
+                    ${projectCard(project,false)}
+                  </div>
+                `).join("")}
+              </div>`
+            :`<p class="empty">
+                Nenhum pedido de participação pendente.
+              </p>`
+        }
+      `);
+      return;
+    }    
     if(n==="mobile-menu"){
       const nav=document.querySelector(".techna-header-nav");
       const aberto=nav?.classList.toggle("is-open")||false;
