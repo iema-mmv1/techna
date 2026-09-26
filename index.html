@@ -4708,27 +4708,6 @@ const result=await supabaseClient
           </p>`
     }
   `;
-
-  const unreadIds=notifications
-    .filter(item=>!item.lida)
-    .map(item=>item.id);
-
-  if(unreadIds.length){
-    const update=await supabaseClient
-      .from("notifications")
-      .update({lida:true})
-      .eq("user_id",userId)
-      .in("id",unreadIds);
-
-    if(update.error){
-      console.error(
-        "Erro ao marcar notificações como lidas:",
-        update.error
-      );
-    }else{
-      await technaRefreshBell();
-    }
-  }
 }
 
 /* Impede a mensagem fixa do botão antigo. */
