@@ -2124,23 +2124,34 @@ async function dashboard(){
     project=>String(project.autora_id)===String(userId)
   );
 
-  const [membrosResult,pedidosResult]=await Promise.all([
-    supabaseClient
-      .from("project_members")
-      .select("project_id")
-      .eq("user_id",userId),
+  const [membrosResult,pedidosResult,colaboradoresResult]=
+    await Promise.all([
+      supabaseClient
+        .from("project_members")
+        .select("project_id")
+        .eq("user_id",userId),
 
-    meusProjetos.length
-      ?supabaseClient
-        .from("project_participation_requests")
-        .select("id,project_id")
-        .eq("status","pendente")
-        .in(
-          "project_id",
-          meusProjetos.map(project=>project.id)
-        )
-      :Promise.resolve({data:[],error:null})
-  ]);
+      meusProjetos.length
+        ?supabaseClient
+          .from("project_participation_requests")
+          .select("id,project_id")
+          .eq("status","pendente")
+          .in(
+            "project_id",
+            meusProjetos.map(project=>project.id)
+          )
+        :Promise.resolve({data:[],error:null}),
+
+      meusProjetos.length
+        ?supabaseClient
+          .from("project_members")
+          .select("project_id,user_id")
+          .in(
+            "project_id",
+            meusProjetos.map(project=>project.id)
+          )
+        :Promise.resolve({data:[],error:null})
+    ]);
 
   if(membrosResult.error){
     console.error(
@@ -2153,6 +2164,13 @@ async function dashboard(){
     console.error(
       "Erro ao carregar pedidos de participação:",
       pedidosResult.error
+    );
+  }
+
+  if(colaboradoresResult.error){
+    console.error(
+      "Erro ao carregar colaboradores:",
+      colaboradoresResult.error
     );
   }
 
@@ -2169,6 +2187,17 @@ async function dashboard(){
   );
 
   const pedidosPendentes=pedidosResult.data||[];
+
+  const colaboradores=new Set(
+    (colaboradoresResult.data||[])
+      .filter(
+        membro=>String(membro.user_id)!==String(userId)
+      )
+      .map(
+        membro=>
+          `${String(membro.project_id)}:${String(membro.user_id)}`
+      )
+  );
 
   const activities=state.projects.length
     ?await getActivities()
@@ -2214,6 +2243,15 @@ async function dashboard(){
             :pedidosPendentes.length
         }</b>
       </button>
+
+      <article class="stat">
+        <small>Colaboram comigo</small>
+        <b>${
+          colaboradoresResult.error
+            ?"—"
+            :colaboradores.size
+        }</b>
+      </article>
 
       <article class="stat">
         <small>Convites</small>
