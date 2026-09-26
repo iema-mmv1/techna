@@ -1026,19 +1026,7 @@ async function loadProjectInteractions(projectId){
 
     supabaseClient
       .from("project_comments")
-      .select(`
-  id,
-  project_id,
-  author_id,
-  conteudo,
-  status,
-  created_at,
-  profiles!project_comments_author_id_fkey(
-    nome,
-    username,
-    fotourl
-  )
-`)
+      .select("id,project_id,author_id,conteudo,status,created_at")
       .eq("project_id",projectId)
       .eq("status","publicado")
       .order("created_at",{ascending:false}),
@@ -1052,7 +1040,9 @@ async function loadProjectInteractions(projectId){
         .maybeSingle()
       :Promise.resolve({data:null,error:null})
   ]);
-
+  if(comments.error){
+    console.error("Erro ao carregar comentários:",comments.error);
+  }
   return {
     likes:likes.error?[]:(likes.data||[]),
     comments:comments.error?[]:(comments.data||[]),
@@ -1122,10 +1112,10 @@ function projectInteractionsHtml(project,interactions,participant=false){
           interactions.comments.length
           ?interactions.comments.map(c=>`
             <article class="comment-item">
-              <strong>${esc(c.profiles?.nome||"Usuário")}</strong>
-              <span>${esc(c.conteudo)}</span>
-              <small>${new Date(c.created_at).toLocaleString("pt-BR")}</small>
-            </article>
+  <strong>${esc(c.profiles?.nome||c.profiles?.username||"Usuário")}</strong>
+  <span>${esc(c.conteudo)}</span>
+  <small>${new Date(c.created_at).toLocaleString("pt-BR")}</small>
+</article>
           `).join("")
           :`<p class="muted">Ainda não há comentários.</p>`
         }
