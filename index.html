@@ -540,6 +540,11 @@ z-index:40;
 .techna-header .brand-name{
   color:#fff;
 }
+/* Reserva o espaço da barra fixa sem cobrir a página */
+.techna-layout{
+  padding-top:var(--techna-header-height,76px);
+}
+
 </style>
 </head>
 <body>
@@ -647,7 +652,26 @@ function renderApp(){
       </main>
     </div>
   `;
+  window.technaHeaderSizeObserver?.disconnect();
 
+  const header=app.querySelector(".techna-header");
+  const layout=app.querySelector(".techna-layout");
+
+  if(header && layout){
+    const ajustarEspacoDaBarra=()=>{
+      layout.style.setProperty(
+        "--techna-header-height",
+        `${header.offsetHeight}px`
+      );
+    };
+
+    ajustarEspacoDaBarra();
+
+    window.technaHeaderSizeObserver=
+      new ResizeObserver(ajustarEspacoDaBarra);
+
+    window.technaHeaderSizeObserver.observe(header);
+  }
   goPage(state.page);
 }
 function openModal(title,body){modalRoot.innerHTML=`<div class="modal-bg" data-close-modal><div class="modal"><div class="modal-head"><h2>${title}</h2><button class="close" data-close-modal>×</button></div>${body}</div></div>`}function closeModal(){modalRoot.innerHTML=""}
