@@ -4690,7 +4690,8 @@ const result=await supabaseClient
     ${
       notifications.length
         ?notifications.map(item=>`
-          <div class="techna-notification-item">
+          <div class="techna-notification-item"
+               data-notification-id="${esc(item.id)}">
             <strong>
               ${esc(item.titulo||"Notificação")}
             </strong>
@@ -4708,8 +4709,34 @@ const result=await supabaseClient
           </p>`
     }
   `;
-}
 
+  menu.addEventListener("click",async event=>{
+    const element=event.target.closest(".techna-notification-item");
+    if(!element)return;
+
+    const item=notifications.find(
+      notification=>String(notification.id)===
+        element.dataset.notificationId
+    );
+
+    if(!item||item.lida)return;
+
+    const update=await supabaseClient
+      .from("notifications")
+      .update({lida:true})
+      .eq("user_id",userId)
+      .eq("id",item.id);
+
+    if(update.error){
+      console.error("Erro ao marcar notificação como lida:",update.error);
+      return;
+    }
+
+    item.lida=true;
+    element.classList.add("is-read");
+    await technaRefreshBell();
+  });
+}
 /* Impede a mensagem fixa do botão antigo. */
 document.addEventListener("click",event=>{
   const bell=event.target.closest(
