@@ -834,9 +834,169 @@ z-index:40;
 .news-carousel-arrow.next{
   right:10px;
 }
+/* TECHNA — ajuste de largura para celular */
+@media (max-width: 620px) {
+  .techna-layout,
+  .techna-layout .main,
+  #pageContent,
+  .dash-grid,
+  .dash-grid > .card,
+  .card-head,
+  .news-carousel-shell,
+  .news-carousel-track {
+    min-width: 0;
+    max-width: 100%;
+  }
 
-@media(max-width
-  
+  .techna-layout .main {
+    padding: 20px 14px 40px;
+  }
+
+  .dash-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .card-head {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .card-head h2,
+  .card-head p {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .card-head p {
+    margin: 0;
+  }
+
+  .card:has(.news-carousel-shell) .card-head {
+    display:block;
+  }
+
+  .card:has(.news-carousel-shell) .card-head h2 {
+    font-size: clamp(1.35rem, 6vw, 1.8rem);
+  }
+
+  .card:has(.news-carousel-shell) .card-head p {
+    margin-top: 6px;
+  }
+
+  .news-carousel-shell {
+    width: 100%;
+  }
+
+  .news-carousel-track {
+    width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+
+  .news-carousel-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 0;
+    min-height: 390px;
+  }
+
+  .news-carousel-copy {
+    min-width: 0;
+    padding: 18px;
+  }
+
+  .news-carousel-copy small,
+  .news-carousel-copy h3,
+  .news-carousel-copy p {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .news-carousel-copy h3 {
+    font-size: clamp(1.15rem, 5vw, 1.5rem);
+  }
+
+  .news-carousel-arrow {
+    opacity: 1;
+    width: 36px;
+    height: 48px;
+  }
+
+  .news-carousel-arrow.prev {
+    left: 4px;
+  }
+
+  .news-carousel-arrow.next {
+    right: 4px;
+  }
+
+  .horizontal {
+    width: 100%;
+    min-width: 0;
+    grid-auto-columns: minmax(0, 82%);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    touch-action: pan-x pan-y;
+  }
+
+  .horizontal > * {
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  .techna-header {
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .techna-header-nav {
+    min-width: 0;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .techna-header-nav > button,
+  .techna-more-trigger {
+    flex: none;
+  }
+
+  .techna-header-actions {
+    gap: 8px;
+  }
+
+  .techna-header .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .techna-header .brand-name {
+    font-size: 1rem;
+  }
+
+  .techna-header-actions > .icon-btn,
+  .techna-profile-trigger {
+    width: 40px;
+    height: 40px;
+    flex: none;
+  }
+
+  .techna-profile-dropdown {
+    right: 0;
+    max-width: calc(100vw - 28px);
+  }
+
+  .toast {
+    right: 12px;
+    left: 12px;
+    max-width: none;
+  }
+}
+
 </style>
 </head>
 <body>
