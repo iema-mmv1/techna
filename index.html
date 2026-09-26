@@ -1134,7 +1134,65 @@ z-index:40;
     background: #fff;
   }
 }
+/* Menu mobile em painel lateral deslizante */
+@media (max-width: 620px) {
+  body.mobile-nav-open::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgba(20, 8, 28, .55);
+  }
 
+  .techna-header-nav,
+  .techna-header-nav.is-open {
+    position: fixed;
+    top: 0;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    display: block;
+    width: min(82vw, 320px);
+    max-width: 320px;
+    max-height: none;
+    margin: 0;
+    padding: 74px 12px 20px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 0;
+    border-radius: 0 18px 18px 0;
+    background: #fff;
+    box-shadow: 12px 0 35px rgba(20, 8, 28, .2);
+    transform: translateX(-105%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform .28s ease, visibility .28s ease;
+  }
+
+  .techna-header-nav.is-open {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .techna-header-nav > button,
+  .techna-header-nav .techna-more-menu button {
+    min-height: 46px;
+    padding: 12px;
+  }
+
+  .techna-mobile-menu-button {
+    position: relative;
+    z-index: 51;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .techna-header-nav {
+    transition: none;
+  }
+}
 </style>
 </head>
 <body>
