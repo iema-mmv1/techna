@@ -1233,6 +1233,22 @@ z-index:40;
     text-align: left;
   }
 }
+/* Barra superior: ícones sem caixa ou contorno */
+.techna-mobile-menu-button,
+.techna-header-actions > .icon-btn[data-action="notifications"],
+.techna-profile-trigger {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Mantém uma indicação visível para navegação pelo teclado */
+.techna-mobile-menu-button:focus-visible,
+.techna-header-actions > .icon-btn[data-action="notifications"]:focus-visible,
+.techna-profile-trigger:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
 </style>
 </head>
 <body>
