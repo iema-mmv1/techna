@@ -527,10 +527,10 @@ z-index:40;
 
 .techna-more:hover .techna-more-menu,
 .techna-more:focus-within .techna-more-menu,
-.techna-profile-menu:hover .techna-profile-dropdown,
-.techna-profile-menu:focus-within .techna-profile-dropdown,
-.techna-profile-menu.is-open .techna-profile-dropdown{
-  display:block;
+body:not(.techna-notification-visible) .techna-profile-menu:hover .techna-profile-dropdown,
+body:not(.techna-notification-visible) .techna-profile-menu:focus-within .techna-profile-dropdown,
+body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-profile-dropdown {
+  display: block;
 }
 
 .techna-more-menu button,
@@ -1608,7 +1608,23 @@ z-index:40;
 <div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div><script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
 <script>
 "use strict";
-const SUPABASE_URL="https://edtgebzafwkounipfvrb.supabase.co";const SUPABASE_ANON_KEY="sb_publishable_t2nSHz0OetO50wFuSGct6A_tiRt3Fu-";const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true,flowType:"pkce"}});const APP_URL=window.location.href.split("?")[0].split("#")[0];const app=document.getElementById("app"),modalRoot=document.getElementById("modal-root"),toast=document.getElementById("toast");const state={user:null,profile:null,page:"dashboard",projects:[],news:[],favorites:[],session:null,projectUpdates:{}};const carouselState={index:0,timer:null,paused:false};const defaultSteps=[{titulo:"Ideia e definição do problema",percentual:5},{titulo:"Pesquisa e requisitos",percentual:10},{titulo:"Planejamento do projeto",percentual:10},{titulo:"Equipe e responsabilidades",percentual:5},{titulo:"Desenvolvimento inicial",percentual:15},{titulo:"Desenvolvimento principal",percentual:20},{titulo:"Protótipo funcional",percentual:10},{titulo:"Testes e validação",percentual:10},{titulo:"Ajustes finais",percentual:5},{titulo:"Apresentação e documentação",percentual:10}];const demoProjects=[{id:"demo-1",titulo:"Horta inteligente",descricao:"Protótipo de irrigação automatizada para o campus.",progresso:75,status:"em_andamento"},{id:"demo-2",titulo:"Campanha Conecta",descricao:"Estratégia de marketing para aproximar projetos e comunidade.",progresso:50,status:"em_testes"},{id:"demo-3",titulo:"Painel de ideias",descricao:"Espaço colaborativo para organizar soluções estudantis.",progresso:30,status:"planejamento"}];const demoNews=[{id:"demo-n1",titulo:"Projeto Horta inteligente chega à fase de testes",resumo:"A equipe concluiu o protótipo e iniciou os testes de campo.",categoria:"Projeto em destaque"},{id:"demo-n2",titulo:"TECHNA abre votação para o destaque do mês",resumo:"Conheça os projetos indicados pela comunidade.",categoria:"Comunidade"}];function esc(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]))}function showToast(text){toast.textContent=text;toast.classList.add("show");clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toast.classList.remove("show"),4500)}function initials(value){return String(value||"U").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase()}
+const SUPABASE_URL="https://edtgebzafwkounipfvrb.supabase.co";const SUPABASE_ANON_KEY="sb_publishable_t2nSHz0OetO50wFuSGct6A_tiRt3Fu-";const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true,flowType:"pkce"}});const APP_URL=window.location.href.split("?")[0].split("#")[0];const app=document.getElementById("app"),modalRoot=document.getElementById("modal-root"),toast=document.getElementById("toast");const state={user:null,profile:null,page:"dashboard",projects:[],news:[],favorites:[],session:null,projectUpdates:{}};const carouselState={index:0,timer:null,paused:false};const defaultSteps=[{titulo:"Ideia e definição do problema",percentual:5},{titulo:"Pesquisa e requisitos",percentual:10},{titulo:"Planejamento do projeto",percentual:10},{titulo:"Equipe e responsabilidades",percentual:5},{titulo:"Desenvolvimento inicial",percentual:15},{titulo:"Desenvolvimento principal",percentual:20},{titulo:"Protótipo funcional",percentual:10},{titulo:"Testes e validação",percentual:10},{titulo:"Ajustes finais",percentual:5},{titulo:"Apresentação e documentação",percentual:10}];const demoProjects=[{id:"demo-1",titulo:"Horta inteligente",descricao:"Protótipo de irrigação automatizada para o campus.",progresso:75,status:"em_andamento"},{id:"demo-2",titulo:"Campanha Conecta",descricao:"Estratégia de marketing para aproximar projetos e comunidade.",progresso:50,status:"em_testes"},{id:"demo-3",titulo:"Painel de ideias",descricao:"Espaço colaborativo para organizar soluções estudantis.",progresso:30,status:"planejamento"}];const demoNews=[{id:"demo-n1",titulo:"Projeto Horta inteligente chega à fase de testes",resumo:"A equipe concluiu o protótipo e iniciou os testes de campo.",categoria:"Projeto em destaque"},{id:"demo-n2",titulo:"TECHNA abre votação para o destaque do mês",resumo:"Conheça os projetos indicados pela comunidade.",categoria:"Comunidade"}];function esc(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]))}
+function showToast(text, isNotification = false) {
+  toast.textContent = text;
+  toast.classList.add("show");
+
+  document.body.classList.toggle(
+    "techna-notification-visible",
+    isNotification
+  );
+
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => {
+    toast.classList.remove("show");
+    document.body.classList.remove("techna-notification-visible");
+  }, 4500);
+}
+function initials(value){return String(value||"U").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase()}
 function avatar(profile,large=false){return`<span class="avatar${large?" avatar-xl":""}">${profile?.foto_url?`<img src="${esc(profile.foto_url)}" alt="Foto de perfil">`:initials(profile?.nome||profile?.email)}</span>`}
 function brand(){return`<a class="brand" href="#" data-page="dashboard"><span class="brand-mark">✦</span><span class="brand-name">TECHNA</span></a>`}function authError(error){const text=String(error?.message||"").toLowerCase();if(text.includes("duplicate key"))return"Esse username já está em uso.";if(text.includes("provider is not enabled"))return"O provedor Google não está ativado no Supabase.";if(text.includes("redirect")||text.includes("url"))return"A URL de retorno não está autorizada no Supabase.";if(text.includes("email not confirmed"))return"Confirme o e-mail antes de entrar.";if(text.includes("invalid login credentials"))return"E-mail, username ou senha incorretos.";return error?.message||"Não foi possível concluir a operação."}
 function renderLogin(){
@@ -4332,8 +4348,9 @@ document.addEventListener("click",async e=>{
     }
 
     if(n==="notifications"){
-      showToast("Você não tem novas notificações.");
-    }
+  if(document.querySelector(".techna-profile-menu.is-open")) return;
+  showToast("Você não tem novas notificações.", true);
+}
   }
 });
 
@@ -4342,6 +4359,7 @@ document.addEventListener("click",event=>{
   const menu=event.target.closest(".techna-profile-menu");
 
   if(trigger){
+    if(document.body.classList.contains("techna-notification-visible")) return;
     const wrapper=trigger.closest(".techna-profile-menu");
     const open=wrapper.classList.toggle("is-open");
     trigger.setAttribute("aria-expanded",String(open));
