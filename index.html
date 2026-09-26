@@ -4513,21 +4513,6 @@ function technaPrepareBell(){
     button.setAttribute("aria-label","Abrir notificações");
     button.setAttribute("aria-expanded","false");
   }
-  if(!button.dataset.hoverReady){
-    button.dataset.hoverReady="true";
-
-    button.addEventListener("mouseenter",()=>{
-      technaCancelBellHoverClose();
-
-      if(!technaNotificationMenu){
-        technaToggleNotifications();
-      }
-    });
-
-    button.addEventListener("mouseleave",()=>{
-      technaScheduleBellHoverClose();
-    });
-  }
   
   return button;
 }
