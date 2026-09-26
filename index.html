@@ -2193,6 +2193,18 @@ const technaBellSvg=`
 `;
 
 let technaNotificationMenu=null;
+function technaCancelBellHoverClose(){
+  clearTimeout(technaBellHoverTimer);
+  technaBellHoverTimer=null;
+}
+
+function technaScheduleBellHoverClose(){
+  technaCancelBellHoverClose();
+
+  technaBellHoverTimer=setTimeout(()=>{
+    technaCloseNotifications();
+  },220);
+}
 
 function technaPrepareBell(){
   const button=document.querySelector(
@@ -2208,7 +2220,22 @@ function technaPrepareBell(){
     button.setAttribute("aria-label","Abrir notificações");
     button.setAttribute("aria-expanded","false");
   }
+  if(!button.dataset.hoverReady){
+    button.dataset.hoverReady="true";
 
+    button.addEventListener("mouseenter",()=>{
+      technaCancelBellHoverClose();
+
+      if(!technaNotificationMenu){
+        technaToggleNotifications();
+      }
+    });
+
+    button.addEventListener("mouseleave",()=>{
+      technaScheduleBellHoverClose();
+    });
+  }
+  
   return button;
 }
 
@@ -2286,6 +2313,13 @@ async function technaToggleNotifications(){
 
   document.body.appendChild(menu);
   technaNotificationMenu=menu;
+  menu.addEventListener("mouseenter",()=>{
+    technaCancelBellHoverClose();
+  });
+
+  menu.addEventListener("mouseleave",()=>{
+    technaScheduleBellHoverClose();
+  });
   button.setAttribute("aria-expanded","true");
 
   const rect=button.getBoundingClientRect();
