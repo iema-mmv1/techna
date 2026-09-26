@@ -1333,6 +1333,145 @@ z-index:40;
   justify-content: center;
   width: 100%;
 }
+/* Rodapé e páginas informativas do TECHNA */
+.techna-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+.techna-layout > .main {
+  flex: 1 0 auto;
+}
+
+.techna-footer {
+  flex: 0 0 auto;
+  padding: 24px clamp(17px, 4vw, 55px);
+  color: #fff;
+  background: linear-gradient(180deg, #321047, #4d1263);
+}
+
+.techna-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.techna-footer-brand strong {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.techna-footer-brand small {
+  display: block;
+  margin-top: 4px;
+  color: #e9ddef;
+}
+
+.techna-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.techna-footer-links button {
+  padding: 6px 0;
+  border: 0;
+  color: #fff;
+  background: transparent;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.techna-footer-links button:hover {
+  color: var(--lime);
+}
+
+.techna-footer-links button:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+
+.techna-info-page {
+  width: min(100%, 900px);
+  margin: 0 auto;
+  line-height: 1.65;
+}
+
+.techna-info-page h2 {
+  margin: 0 0 12px;
+  color: var(--p);
+}
+
+.techna-info-page h3 {
+  margin: 24px 0 8px;
+  color: var(--p);
+}
+
+.techna-info-page p {
+  margin: 0 0 12px;
+}
+
+.techna-team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.techna-team-member {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  text-align: center;
+}
+
+.techna-team-avatar {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--p);
+  background: #f1e8f3;
+  font-size: 1.9rem;
+}
+
+.techna-team-member strong {
+  font-size: .9rem;
+}
+
+.techna-draft-note {
+  padding: 14px 16px;
+  border-left: 4px solid var(--lime);
+  border-radius: 8px;
+  background: var(--lime2);
+}
+
+@media (max-width: 620px) {
+  .techna-footer {
+    padding: 22px 16px;
+  }
+
+  .techna-footer-inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .techna-footer-links {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .techna-team-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 </style>
 </head>
 <body>
