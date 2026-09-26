@@ -5361,7 +5361,6 @@ async function technaRefreshPendingRequestsCount(){
   const counter=document.querySelector(
     '[data-action="dashboard-pedidos"] b'
   );
-
   if(!counter)return;
 
   const userId=state.user.id;
@@ -5379,7 +5378,7 @@ async function technaRefreshPendingRequestsCount(){
   try{
     const result=await supabaseClient
       .from("project_participation_requests")
-      .select("id",{count:"exact",head:true})
+      .select("id,project_id")
       .eq("status","pendente")
       .in(
         "project_id",
@@ -5401,13 +5400,19 @@ async function technaRefreshPendingRequestsCount(){
     );
 
     if(currentCounter){
-      currentCounter.textContent=String(result.count||0);
+      currentCounter.textContent=String(
+        (result.data||[]).length
+      );
     }
+  }catch(error){
+    console.error(
+      "Falha inesperada ao atualizar pedidos:",
+      error
+    );
   }finally{
     technaPendingCountRefreshing=false;
   }
 }
-
 setInterval(technaRefreshPendingRequestsCount,3000);
 
 document.addEventListener("visibilitychange",()=>{
