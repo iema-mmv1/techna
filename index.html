@@ -4823,6 +4823,15 @@ document.addEventListener("click",async e=>{
       await abrirPedidosDoDashboard();
       return;
     }
+        if(n==="dashboard-colaboradores"){
+      await abrirColaboradoresDoDashboard();
+      return;
+    }
+
+    if(n==="abrir-projeto-colaborador"){
+      await openProject(a.dataset.project);
+      return;
+    }
     if(n==="mobile-menu"){
       const nav=document.querySelector(".techna-header-nav");
       const aberto=nav?.classList.toggle("is-open")||false;
