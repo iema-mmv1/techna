@@ -1193,6 +1193,31 @@ z-index:40;
     transition: none;
   }
 }
+/* Menu mobile: entra pela direita, abaixo do cabeçalho */
+@media (max-width: 620px) {
+  .techna-header-nav,
+  .techna-header-nav.is-open {
+    top: var(--techna-header-height, 60px);
+    right: 0;
+    bottom: 0;
+    left: auto;
+
+    width: min(82vw, 320px);
+    height: calc(100dvh - var(--techna-header-height, 60px));
+    max-height: none;
+
+    border-radius: 18px 0 0 0;
+    transform: translateX(105%);
+  }
+
+  .techna-header-nav.is-open {
+    transform: translateX(0);
+  }
+
+  body.mobile-nav-open::before {
+    top: 60px;
+  }
+}
 </style>
 </head>
 <body>
