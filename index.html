@@ -4384,12 +4384,21 @@ document.addEventListener("click",event=>{
   const menu=event.target.closest(".techna-profile-menu");
 
   if(trigger){
-    if(document.body.classList.contains("techna-notification-visible")) return;
-    const wrapper=trigger.closest(".techna-profile-menu");
-    const open=wrapper.classList.toggle("is-open");
-    trigger.setAttribute("aria-expanded",String(open));
-    return;
+  if(document.body.classList.contains("techna-notification-visible")) return;
+  const wrapper=trigger.closest(".techna-profile-menu");
+  const open=wrapper.classList.toggle("is-open");
+
+  if(open){
+    const dropdown=wrapper.querySelector(".techna-profile-dropdown");
+    dropdown.style.top=`${
+      document.querySelector(".techna-header")
+        ?.getBoundingClientRect().bottom ?? 76
+    }px`;
   }
+
+  trigger.setAttribute("aria-expanded",String(open));
+  return;
+}
 
   if(!menu){
     document.querySelectorAll(".techna-profile-menu.is-open")
