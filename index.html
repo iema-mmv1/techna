@@ -1219,6 +1219,20 @@ z-index:40;
     top: 60px;
   }
 }
+.techna-header-nav > .techna-install-button {
+  display: none;
+}
+
+@media (max-width: 620px) {
+  .techna-header-nav > .techna-install-button {
+    display: block;
+    width: 100%;
+    min-height: 46px;
+    padding: 12px;
+    color: var(--p);
+    text-align: left;
+  }
+}
 </style>
 </head>
 <body>
@@ -1540,6 +1554,11 @@ function renderApp(){
           <button type="button" data-page="projects">Projetos</button>
           <button type="button" data-page="news">Notícias</button>
           <button type="button" data-page="favorites">Favoritos</button>
+          <button type="button"
+        class="techna-install-button"
+        data-action="install-app">
+  Instalar aplicativo
+</button>
 
           <div class="techna-more">
             <button type="button" class="techna-more-trigger"
@@ -3458,6 +3477,60 @@ renderApp=function(...args){
 technaPrepareBell();
 technaRefreshBell();
 setInterval(technaRefreshBell,15000);
+</script>
+<script>
+(() => {
+  let pedidoInstalacao = null;
+
+  window.addEventListener("beforeinstallprompt", event => {
+    event.preventDefault();
+    pedidoInstalacao = event;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    pedidoInstalacao = null;
+  });
+
+  document.addEventListener("click", async event => {
+    const botao = event.target.closest('[data-action="install-app"]');
+    if (!botao) return;
+
+    event.preventDefault();
+
+    const instalado =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+
+    if (instalado) {
+      alert("O TECHNA já está instalado neste celular.");
+      return;
+    }
+
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    if (ios) {
+      alert(
+        "Para instalar o TECHNA no iPhone: abra este site no Safari, " +
+        "toque em Compartilhar, escolha Adicionar à Tela de Início, " +
+        "ative Abrir como App e toque em Adicionar."
+      );
+      return;
+    }
+
+    if (pedidoInstalacao) {
+      const pedido = pedidoInstalacao;
+      pedidoInstalacao = null;
+      await pedido.prompt();
+      return;
+    }
+
+    alert(
+      "Abra o menu do navegador e escolha Instalar app ou " +
+      "Adicionar à tela inicial. Se o TECHNA já estiver instalado, " +
+      "essa opção pode não aparecer."
+    );
+  });
+})();
 </script>
 </body>
 </html>
