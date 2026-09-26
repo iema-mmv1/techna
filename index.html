@@ -4532,6 +4532,12 @@ technaBellStyle.textContent=`
     font-size:12px;
     font-weight:400;
   }
+  .techna-notification-item.is-unread{
+  padding-left:10px;
+  border-left:3px solid var(--p);
+  border-radius:8px;
+  background:#f3edf5;
+}
 `;
 document.head.appendChild(technaBellStyle);
 
@@ -4683,14 +4689,14 @@ const result=await supabaseClient
     return;
   }
 
-  const notifications=result.data||[];
+    const notifications=result.data||[];
 
   menu.innerHTML=`
     <h3>Notificações</h3>
     ${
       notifications.length
         ?notifications.map(item=>`
-          <div class="techna-notification-item"
+          <div class="techna-notification-item ${item.lida?"":"is-unread"}"
                data-notification-id="${esc(item.id)}">
             <strong>
               ${esc(item.titulo||"Notificação")}
@@ -4718,8 +4724,17 @@ const result=await supabaseClient
       notification=>String(notification.id)===
         element.dataset.notificationId
     );
+    if(!item)return;
 
-    if(!item||item.lida)return;
+    if(event.detail>=2){
+      if(item.entity_type==="project" && item.entity_id){
+        technaCloseNotifications();
+        await openProject(item.entity_id);
+      }
+      return;
+    }
+
+    if(item.lida)return;
 
     const update=await supabaseClient
       .from("notifications")
@@ -4733,7 +4748,7 @@ const result=await supabaseClient
     }
 
     item.lida=true;
-    element.classList.add("is-read");
+    element.classList.remove("is-unread");
     await technaRefreshBell();
   });
 }
