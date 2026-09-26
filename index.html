@@ -261,6 +261,233 @@ body:has(.login) .sidebar,body:has(.login) .layout>.sidebar{display:none!importa
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+/* TECHNA: navegação superior */
+.techna-layout{
+  display:block;
+  min-height:100dvh;
+}
+
+.techna-header{
+  position:relative;
+  z-index:40;
+  display:flex;
+  align-items:center;
+  gap:24px;
+  min-height:76px;
+  padding:10px clamp(16px,3vw,48px);
+  background:#fff;
+  border-bottom:1px solid var(--line);
+  box-shadow:0 3px 16px rgba(77,18,99,.06);
+}
+
+.techna-header .brand{
+  flex:none;
+  color:var(--p);
+  white-space:nowrap;
+}
+
+.techna-header-nav,
+.techna-header-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.techna-header-nav{
+  flex:none;
+}
+
+.techna-header-nav button,
+.techna-more-menu button,
+.techna-profile-dropdown button{
+  border:0;
+  background:transparent;
+  color:var(--ink);
+  cursor:pointer;
+  text-align:left;
+}
+
+.techna-header-nav > button,
+.techna-more-trigger{
+  padding:10px 5px;
+  white-space:nowrap;
+}
+
+.techna-header-nav button:hover,
+.techna-more-menu button:hover,
+.techna-profile-dropdown button:hover{
+  color:var(--p);
+  background:#f7f1f9;
+}
+
+.techna-header-actions{
+  flex:1;
+  min-width:0;
+  justify-content:flex-end;
+}
+
+.techna-search{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:min(100%,540px);
+  min-width:130px;
+  height:46px;
+  padding:0 15px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  color:var(--muted);
+  background:#fff;
+}
+
+.techna-search:focus-within{
+  border-color:var(--p3);
+  outline:2px solid rgba(168,215,25,.25);
+}
+
+.techna-search span{
+  font-size:25px;
+  line-height:1;
+}
+
+.techna-search input{
+  width:100%;
+  min-width:0;
+  border:0;
+  outline:0;
+  color:var(--ink);
+  background:transparent;
+}
+
+.techna-more,
+.techna-profile-menu{
+  position:relative;
+  flex:none;
+}
+
+.techna-more-menu,
+.techna-profile-dropdown{
+  position:absolute;
+  top:100%;
+  right:0;
+  display:none;
+  min-width:230px;
+  padding:8px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 14px 32px rgba(49,16,71,.18);
+}
+
+.techna-profile-dropdown{
+  min-width:255px;
+}
+
+.techna-more:hover .techna-more-menu,
+.techna-more:focus-within .techna-more-menu,
+.techna-profile-menu:hover .techna-profile-dropdown,
+.techna-profile-menu:focus-within .techna-profile-dropdown,
+.techna-profile-menu.is-open .techna-profile-dropdown{
+  display:block;
+}
+
+.techna-more-menu button,
+.techna-profile-dropdown button{
+  display:block;
+  width:100%;
+  padding:11px 12px;
+  border-radius:8px;
+}
+
+.techna-profile-trigger{
+  display:grid;
+  width:44px;
+  height:44px;
+  place-items:center;
+  padding:2px;
+  border:2px solid var(--line);
+  border-radius:50%;
+  background:#fff;
+}
+
+.techna-profile-name{
+  display:grid;
+  gap:3px;
+  padding:10px 12px;
+  border-bottom:1px solid var(--line);
+}
+
+.techna-profile-name small,
+.techna-coming-soon small{
+  color:var(--muted);
+}
+
+.techna-coming-soon{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:11px 12px;
+  color:var(--muted);
+  cursor:default;
+}
+
+.techna-layout .main{
+  width:100%;
+  min-width:0;
+  padding:28px clamp(17px,4vw,55px) 55px;
+}
+
+.techna-layout .topbar{
+  margin-bottom:25px;
+}
+
+@media(max-width:1100px){
+  .techna-header{
+    flex-wrap:wrap;
+    gap:10px 18px;
+  }
+
+  .techna-header-nav{
+    order:3;
+    width:100%;
+    overflow-x:auto;
+  }
+
+  .techna-header-actions{
+    margin-left:auto;
+  }
+}
+
+@media(max-width:620px){
+  .techna-header .brand-name{
+    font-size:1.05rem;
+  }
+
+  .techna-search{
+    width:42px;
+    min-width:42px;
+    padding:0 9px;
+  }
+
+  .techna-search:focus-within{
+    position:absolute;
+    left:12px;
+    right:110px;
+    z-index:2;
+    width:auto;
+    background:#fff;
+  }
+
+  .techna-search:not(:focus-within) input{
+    width:0;
+    padding:0;
+    opacity:0;
+  }
+
+  .techna-header-nav{
+    gap:8px;
+  }
+}
 </style>
 </head>
 <body>
@@ -276,7 +503,99 @@ function renderNewsCarousel(items){const list=(items||[]).filter(Boolean);if(!li
 function titleData(){return{dashboard:["Olá, "+(state.profile?.nome?.split(" ")[0]||"estudante")+"!","Bem-vindo ao seu espaço de projetos."],projects:["Projetos","Crie, explore e acompanhe projetos."],news:["Notícias","Acompanhe o que está acontecendo na TECHNA."],favorites:["Favoritos","Consulte seus conteúdos salvos."],voting:["Destaque do mês","A comunidade escolhe em conjunto."],suggestions:["Sugestões","Sua ideia pode melhorar a plataforma."],profile:["Meu perfil","Gerencie suas informações e seu avatar."],teacher:["Área dos professores","Acompanhe orientações e colaborações."],admin:["Administração","Gestão e moderação da plataforma."]}[state.page]}function frame(html){const [title,subtitle]=titleData();document.getElementById("pageTitle").textContent=title;document.getElementById("pageSubtitle").textContent=subtitle;document.getElementById("pageContent").innerHTML=html}async function getActivities(){let updates=[];if(state.user){const r=await supabaseClient.from("project_updates").select("*,profiles(nome)").order("created_at",{ascending:false});if(!r.error)updates=r.data||[]}const grouped={};updates.forEach(u=>(grouped[u.project_id]??=[]).push(u));return state.projects.flatMap(p=>projectActivity(p,grouped[p.id]||[])).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))}
 async function dashboard(){const ps=dataProjects(),activities=state.projects.length?await getActivities():[],feed=activities.length?activities:demoNews;frame(`<div class="stats"><article class="stat"><small>Meus projetos</small><b>${state.projects.length}</b></article><article class="stat"><small>Em acompanhamento</small><b>0</b></article><article class="stat"><small>Convites</small><b>0</b></article><article class="stat"><small>Progresso médio</small><b>${ps.length?Math.round(ps.reduce((a,p)=>a+Number(p.progresso||0),0)/ps.length):0}%</b></article></div><div class="dash-grid"><section class="card wide"><div class="card-head"><h2>Notícias em destaque</h2><p>Atualizações da comunidade TECHNA.</p></div>${renderNewsCarousel(feed.slice(0,8))}</section><section class="card wide"><div class="card-head"><h2>Notícias recentes</h2><button class="btn btn-ghost" data-page="news">Ver todas</button></div><div class="horizontal">${feed.slice(0,8).map(n=>n.project_id?activityCard(n):newsCard(n)).join("")}</div></section><section class="card"><div class="card-head"><h2>Meus projetos</h2><button class="btn btn-primary" data-action="new-project">Novo projeto</button></div><div class="project-grid">${ps.slice(0,4).map(projectCard).join("")}</div></section></div>`);initCarousel()}
 async function projectsPage(){frame(`<section class="card"><div class="card-head"><h2>Projetos</h2><button class="btn btn-primary" data-action="new-project">Novo projeto</button></div><div class="project-grid">${dataProjects().map(projectCard).join("")}</div></section>`)}async function newsPage(){const activities=state.projects.length?await getActivities():[],feed=activities.length?activities:demoNews;frame(`<section class="card"><div class="card-head"><h2>Notícias</h2><p>Projetos novos e atualizações da comunidade.</p></div><div class="horizontal">${feed.map(n=>n.project_id?activityCard(n):newsCard(n)).join("")}</div></section>`)}function profilePage(){const p=state.profile||{};frame(`<section class="card"><div class="profile-head">${avatar(p,true)}<div><h2>${esc(p.nome||"Usuário")}</h2><p class="muted">${esc(p.username||"usuário")} · ${esc(p.curso||"Sem curso")}</p><button class="btn btn-primary" data-action="edit-profile">Editar meu perfil</button></div></div></section>`)}function simplePage(){frame(`<section class="card"><h2>${titleData()[0]}</h2><div class="empty">Esta área está pronta para receber os dados do Supabase.</div></section>`)}async function goPage(page){state.page=page;await({dashboard,projects:projectsPage,news:newsPage,profile:profilePage,favorites:simplePage,voting:simplePage,suggestions:simplePage,teacher:simplePage,admin:simplePage}[page]||dashboard)()}
-function renderApp(){const p=state.profile||{};app.innerHTML=`<div class="layout"><aside class="sidebar" id="sidebar">${brand()}<nav class="nav"><button data-page="dashboard">Visão geral</button><button data-page="projects">Projetos</button><button data-page="news">Notícias</button><button data-page="favorites">Favoritos</button><button data-page="voting">Destaque do mês</button><button data-page="suggestions">Sugestões</button><button data-page="profile">Meu perfil</button><button data-page="teacher">Área dos professores</button><button data-page="admin">Administração</button></nav><div class="sidebar-bottom"><div class="mini-profile">${avatar(p)}<div><strong>${esc(p.nome||state.user?.email||"Usuário")}</strong><small>${esc(p.username||"usuário")}</small></div></div><button class="logout" data-action="logout">Sair da conta</button></div></aside><main class="main"><header class="topbar"><div><button class="icon-btn menu" data-action="toggle-menu">☰</button><h1 id="pageTitle"></h1><p id="pageSubtitle"></p></div><button class="icon-btn" data-action="notifications">♢</button></header><section id="pageContent"></section></main></div>`;goPage(state.page)}function openModal(title,body){modalRoot.innerHTML=`<div class="modal-bg" data-close-modal><div class="modal"><div class="modal-head"><h2>${title}</h2><button class="close" data-close-modal>×</button></div>${body}</div></div>`}function closeModal(){modalRoot.innerHTML=""}
+function renderApp(){
+  const p=state.profile;
+
+  app.innerHTML=`
+    <div class="layout techna-layout">
+      <header class="techna-header">
+        ${brand()}
+
+        <nav class="techna-header-nav" aria-label="Navegação principal">
+          <button type="button" data-page="projects">Projetos</button>
+          <button type="button" data-page="news">Notícias</button>
+          <button type="button" data-page="favorites">Favoritos</button>
+
+          <div class="techna-more">
+            <button type="button" class="techna-more-trigger"
+                    aria-label="Mais opções">
+              Mais ▾
+            </button>
+            <div class="techna-more-menu">
+              <button type="button" data-page="voting">Destaque do mês</button>
+              <button type="button" data-page="suggestions">Sugestões</button>
+              <button type="button" data-page="teacher">Área dos professores</button>
+              <button type="button" data-page="admin">Administração</button>
+            </div>
+          </div>
+        </nav>
+
+        <div class="techna-header-actions">
+          <label class="techna-search">
+            <span aria-hidden="true">⌕</span>
+            <input type="search"
+                   id="techna-search"
+                   aria-label="Pesquisar"
+                   placeholder="Pesquisar projetos ou notícias">
+          </label>
+
+          <button type="button"
+                  class="icon-btn"
+                  data-action="notifications"
+                  aria-label="Abrir notificações">♧</button>
+
+          <div class="techna-profile-menu">
+            <button type="button"
+                    class="techna-profile-trigger"
+                    aria-label="Abrir menu do perfil"
+                    aria-expanded="false">
+              ${avatar(p)}
+            </button>
+
+            <div class="techna-profile-dropdown">
+              <div class="techna-profile-name">
+                <strong>${esc(p?.nome||state.user?.email||"Usuário")}</strong>
+                <small>${esc(p?.username||"")}</small>
+              </div>
+
+              <button type="button" data-page="profile">
+                Configurações de conta
+              </button>
+              <button type="button" data-action="notifications">
+                Notificações
+              </button>
+              <button type="button" data-page="favorites">
+                Projetos favoritos
+              </button>
+              <button type="button" data-action="participating-projects">
+                Projetos que participo
+              </button>
+              <span class="techna-coming-soon">
+                Mensagens <small>Em breve</small>
+              </span>
+              <button type="button" data-action="logout">
+                Sair da conta
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <h1 id="pageTitle"></h1>
+            <p id="pageSubtitle"></p>
+          </div>
+        </div>
+        <section id="pageContent"></section>
+      </main>
+    </div>
+  `;
+
+  goPage(state.page);
+}
+function openModal(title,body){modalRoot.innerHTML=`<div class="modal-bg" data-close-modal><div class="modal"><div class="modal-head"><h2>${title}</h2><button class="close" data-close-modal>×</button></div>${body}</div></div>`}function closeModal(){modalRoot.innerHTML=""}
 async function openProject(id){
   const p=state.projects.find(x=>String(x.id)===String(id));
   if(!p)return;
@@ -1677,6 +1996,9 @@ document.addEventListener("click",async e=>{
     }
 
     if(n==="edit-profile")profileModal();
+    if(n==="participating-projects"){
+      showToast("A lista de projetos que você participa será adicionada em uma próxima etapa.");
+    }
     if(n==="send-password-reset")sendPasswordReset();
 
     if(n==="toggle-menu"){
@@ -1695,6 +2017,26 @@ document.addEventListener("click",async e=>{
   }
 });
 
+document.addEventListener("click",event=>{
+  const trigger=event.target.closest(".techna-profile-trigger");
+  const menu=event.target.closest(".techna-profile-menu");
+
+  if(trigger){
+    const wrapper=trigger.closest(".techna-profile-menu");
+    const open=wrapper.classList.toggle("is-open");
+    trigger.setAttribute("aria-expanded",String(open));
+    return;
+  }
+
+  if(!menu){
+    document.querySelectorAll(".techna-profile-menu.is-open")
+      .forEach(wrapper=>{
+        wrapper.classList.remove("is-open");
+        wrapper.querySelector(".techna-profile-trigger")
+          ?.setAttribute("aria-expanded","false");
+      });
+  }
+});
 modalRoot.addEventListener("click",e=>{
   if(e.target.hasAttribute("data-close-modal")){
     closeModal();
