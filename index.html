@@ -4354,7 +4354,154 @@ function showConfirmation({
     cancelButton.focus();
   });
 }
+async function abrirPedidosDoDashboard(){
+  const meusProjetos=state.projects.filter(
+    project=>
+      String(project.autora_id)===String(state.user?.id)
+  );
 
+  if(!meusProjetos.length){
+    openModal(
+      "Pedidos de participação",
+      `<div data-dashboard-pedidos>
+         <p class="empty">
+           Você ainda não tem projetos com pedidos de participação.
+         </p>
+       </div>`
+    );
+    return;
+  }
+
+  const pedidosResult=await supabaseClient
+    .from("project_participation_requests")
+    .select("id,project_id,requester_id,mensagem,created_at")
+    .eq("status","pendente")
+    .in(
+      "project_id",
+      meusProjetos.map(project=>project.id)
+    )
+    .order("created_at",{ascending:true});
+
+  if(pedidosResult.error){
+    console.error(
+      "Erro ao carregar pedidos de participação:",
+      pedidosResult.error
+    );
+    showToast(
+      "Não foi possível carregar os pedidos de participação."
+    );
+    return;
+  }
+
+  const pedidos=pedidosResult.data||[];
+  const solicitantesIds=[
+    ...new Set(
+      pedidos.map(pedido=>pedido.requester_id)
+        .filter(Boolean)
+    )
+  ];
+
+  const perfisResult=solicitantesIds.length
+    ?await supabaseClient
+      .from("profiles")
+      .select("id,nome,username,foto_url")
+      .in("id",solicitantesIds)
+    :{data:[],error:null};
+
+  if(perfisResult.error){
+    console.error(
+      "Erro ao carregar nomes dos solicitantes:",
+      perfisResult.error
+    );
+    showToast(
+      "Não foi possível carregar os nomes dos solicitantes."
+    );
+    return;
+  }
+
+  const projetosPorId=new Map(
+    meusProjetos.map(project=>[
+      String(project.id),
+      project
+    ])
+  );
+
+  const perfisPorId=new Map(
+    (perfisResult.data||[]).map(perfil=>[
+      String(perfil.id),
+      perfil
+    ])
+  );
+
+  openModal("Pedidos de participação",`
+    <div data-dashboard-pedidos>
+      ${
+        pedidos.length
+          ?pedidos.map(pedido=>{
+            const projeto=projetosPorId.get(
+              String(pedido.project_id)
+            );
+            const perfil=perfisPorId.get(
+              String(pedido.requester_id)
+            );
+            const nome=perfil?.nome||
+                       perfil?.username||
+                       "Usuário";
+
+            return `
+              <article class="participation-request">
+                <span class="project-person-avatar">
+                  ${
+                    perfil?.foto_url
+                      ?`<img src="${esc(perfil.foto_url)}"
+                              alt="Foto de ${esc(nome)}">`
+                      :esc(initials(nome))
+                  }
+                </span>
+
+                <div class="participation-request-info">
+                  <strong>${esc(nome)}</strong>
+                  <p>
+                    Projeto:
+                    <strong>${esc(projeto?.titulo||"Projeto")}</strong>
+                  </p>
+                  ${
+                    pedido.mensagem
+                      ?`<p>${esc(pedido.mensagem)}</p>`
+                      :`<p class="muted">Sem mensagem.</p>`
+                  }
+                </div>
+
+                <div class="participation-request-actions">
+                  <button type="button"
+                          class="btn btn-primary"
+                          data-action="decide-participation"
+                          data-request-id="${esc(pedido.id)}"
+                          data-project-id="${esc(pedido.project_id)}"
+                          data-decision="aceita">
+                    Aceitar
+                  </button>
+
+                  <button type="button"
+                          class="btn btn-ghost"
+                          data-action="decide-participation"
+                          data-request-id="${esc(pedido.id)}"
+                          data-project-id="${esc(pedido.project_id)}"
+                          data-decision="recusada">
+                    Recusar
+                  </button>
+                </div>
+              </article>
+            `;
+          }).join("")
+          :`<p class="empty">
+              Nenhum pedido de participação pendente.
+            </p>`
+      }
+    </div>
+  `);
+}
+  
 document.addEventListener("click",async e=>{
   const coverButton=e.target.closest("[data-album-cover]");
   const removeButton=e.target.closest("[data-album-remove]");
@@ -4492,85 +4639,9 @@ document.addEventListener("click",async e=>{
     }
 
     if(n==="dashboard-pedidos"){
-      const meusProjetos=state.projects.filter(
-        project=>
-          String(project.autora_id)===String(state.user.id)
-      );
-
-      if(!meusProjetos.length){
-        openModal(
-          "Pedidos de participação",
-          `<p class="empty">
-             Você ainda não tem projetos com pedidos de participação.
-           </p>`
-        );
-        return;
-      }
-
-      const result=await supabaseClient
-        .from("project_participation_requests")
-        .select("id,project_id")
-        .eq("status","pendente")
-        .in(
-          "project_id",
-          meusProjetos.map(project=>project.id)
-        );
-
-      if(result.error){
-        console.error(
-          "Erro ao carregar pedidos de participação:",
-          result.error
-        );
-        showToast(
-          "Não foi possível carregar os pedidos de participação."
-        );
-        return;
-      }
-
-      const quantidadePorProjeto=new Map();
-
-      for(const pedido of result.data||[]){
-        const id=String(pedido.project_id);
-        quantidadePorProjeto.set(
-          id,
-          (quantidadePorProjeto.get(id)||0)+1
-        );
-      }
-
-      const projetosComPedidos=meusProjetos.filter(
-        project=>
-          quantidadePorProjeto.has(String(project.id))
-      );
-
-      openModal("Pedidos de participação",`
-        <p class="muted">
-          Abra um projeto para aceitar ou recusar os pedidos.
-        </p>
-
-        ${
-          projetosComPedidos.length
-            ?`<div class="project-grid">
-                ${projetosComPedidos.map(project=>`
-                  <div>
-                    <p>
-                      <strong>${esc(project.titulo)}</strong>:
-                      ${
-                        quantidadePorProjeto.get(
-                          String(project.id)
-                        )
-                      } pedido(s) pendente(s)
-                    </p>
-                    ${projectCard(project,false)}
-                  </div>
-                `).join("")}
-              </div>`
-            :`<p class="empty">
-                Nenhum pedido de participação pendente.
-              </p>`
-        }
-      `);
+      await abrirPedidosDoDashboard();
       return;
-    }    
+    }
     if(n==="mobile-menu"){
       const nav=document.querySelector(".techna-header-nav");
       const aberto=nav?.classList.toggle("is-open")||false;
@@ -4613,9 +4684,17 @@ document.addEventListener("click",async e=>{
           :"Participação recusada."
       );
 
-      await openProject(projectId);
+        if(modalRoot.querySelector("[data-dashboard-pedidos]")){
+        await abrirPedidosDoDashboard();
+
+        if(state.page==="dashboard"){
+          await dashboard();
+        }
+      }else{
+        await openProject(projectId);
+      }
+
       return;
-    }
 
     
     if(n==="create-account")registerModal();
