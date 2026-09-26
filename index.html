@@ -1909,6 +1909,10 @@ function titleData() {
     terms: [
       "Termos de uso",
       "Orientações para usar a plataforma."
+    ],
+    trash: [
+      "Lixeira",
+      "Restaure projetos movidos para a lixeira."
     ]
   }[state.page];
 }
@@ -2261,6 +2265,86 @@ function termsPage() {
       </p>
     </article>
   `);
+}
+async function trashPage() {
+  const result = await supabaseClient
+    .from("projects")
+    .select("id,titulo,descricao,deleted_at")
+    .eq("autora_id", state.user.id)
+    .not("deleted_at", "is", null)
+    .order("deleted_at", {ascending:false});
+
+  if (result.error) {
+    console.error("Erro ao carregar lixeira:", result.error);
+    frame(`
+      <section class="techna-trash-page">
+        <p class="message">Não foi possível carregar a lixeira.</p>
+      </section>
+    `);
+    return;
+  }
+
+  const projects = result.data || [];
+
+  frame(`
+    <section class="techna-trash-page">
+      <p class="muted">
+        Projetos na lixeira não aparecem nas listas normais.
+        Você pode restaurá-los quando quiser.
+      </p>
+
+      ${
+        projects.length
+          ? projects.map(project => `
+              <article class="techna-trash-item">
+                <div>
+                  <h2>${esc(project.titulo)}</h2>
+                  <p>${esc(project.descricao || "")}</p>
+                  <small class="muted">
+                    Movido para a lixeira em
+                    ${new Date(project.deleted_at).toLocaleString("pt-BR")}
+                  </small>
+                </div>
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-action="restore-project"
+                        data-project="${esc(project.id)}">
+                  Restaurar
+                </button>
+              </article>
+            `).join("")
+          : `<p class="muted">Sua lixeira está vazia.</p>`
+      }
+    </section>
+  `);
+}
+
+async function restoreProject(id) {
+  if (!state.user || !id) return;
+
+  const result = await supabaseClient
+    .from("projects")
+    .update({deleted_at: null})
+    .eq("id", id)
+    .eq("autora_id", state.user.id)
+    .not("deleted_at", "is", null)
+    .select("id")
+    .maybeSingle();
+
+  if (result.error) {
+    showToast(authError(result.error));
+    return;
+  }
+
+  if (!result.data) {
+    showToast("Não foi possível restaurar o projeto.");
+    return;
+  }
+
+  await loadData();
+  await goPage("trash");
+  showToast("Projeto restaurado com sucesso.");
 }
 async function goPage(page) {
   state.page = page;
@@ -4319,6 +4403,15 @@ setInterval(technaRefreshBell,15000);
     );
   });
 })();
+document.addEventListener("click", async event => {
+  const button = event.target.closest(
+    '[data-action="restore-project"]'
+  );
+
+  if (!button) return;
+
+  await restoreProject(button.dataset.project);
+});
 </script>
 </body>
 </html>
