@@ -4660,8 +4660,8 @@ menu.style.top=`${
 const result=await supabaseClient
     .from("notifications")
     .select(
-      "id,titulo,mensagem,lida,created_at"
-    )
+  "id,titulo,mensagem,lida,created_at,tipo,entity_type,entity_id"
+)
     .eq("user_id",userId)
     .order("created_at",{ascending:false})
     .limit(50);
