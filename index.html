@@ -555,9 +555,172 @@ z-index:40;
 const SUPABASE_URL="https://edtgebzafwkounipfvrb.supabase.co";const SUPABASE_ANON_KEY="sb_publishable_t2nSHz0OetO50wFuSGct6A_tiRt3Fu-";const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true,flowType:"pkce"}});const APP_URL=window.location.href.split("?")[0].split("#")[0];const app=document.getElementById("app"),modalRoot=document.getElementById("modal-root"),toast=document.getElementById("toast");const state={user:null,profile:null,page:"dashboard",projects:[],news:[],favorites:[],session:null,projectUpdates:{}};const carouselState={index:0,timer:null,paused:false};const defaultSteps=[{titulo:"Ideia e definição do problema",percentual:5},{titulo:"Pesquisa e requisitos",percentual:10},{titulo:"Planejamento do projeto",percentual:10},{titulo:"Equipe e responsabilidades",percentual:5},{titulo:"Desenvolvimento inicial",percentual:15},{titulo:"Desenvolvimento principal",percentual:20},{titulo:"Protótipo funcional",percentual:10},{titulo:"Testes e validação",percentual:10},{titulo:"Ajustes finais",percentual:5},{titulo:"Apresentação e documentação",percentual:10}];const demoProjects=[{id:"demo-1",titulo:"Horta inteligente",descricao:"Protótipo de irrigação automatizada para o campus.",progresso:75,status:"em_andamento"},{id:"demo-2",titulo:"Campanha Conecta",descricao:"Estratégia de marketing para aproximar projetos e comunidade.",progresso:50,status:"em_testes"},{id:"demo-3",titulo:"Painel de ideias",descricao:"Espaço colaborativo para organizar soluções estudantis.",progresso:30,status:"planejamento"}];const demoNews=[{id:"demo-n1",titulo:"Projeto Horta inteligente chega à fase de testes",resumo:"A equipe concluiu o protótipo e iniciou os testes de campo.",categoria:"Projeto em destaque"},{id:"demo-n2",titulo:"TECHNA abre votação para o destaque do mês",resumo:"Conheça os projetos indicados pela comunidade.",categoria:"Comunidade"}];function esc(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]))}function showToast(text){toast.textContent=text;toast.classList.add("show");clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toast.classList.remove("show"),4500)}function initials(value){return String(value||"U").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase()}function avatar(profile,large=false){return`<span class="avatar${large?" avatar-xl":""}">${profile?.foto_url?`<img src="${esc(profile.foto_url)}" alt="Foto de perfil">`:initials(profile?.nome||profile?.email)}</span>`}function brand(){return`<a class="brand" href="#" data-page="dashboard"><span class="brand-mark">✦</span><span class="brand-name">TECHNA</span></a>`}function authError(error){const text=String(error?.message||"").toLowerCase();if(text.includes("duplicate key"))return"Esse username já está em uso.";if(text.includes("provider is not enabled"))return"O provedor Google não está ativado no Supabase.";if(text.includes("redirect")||text.includes("url"))return"A URL de retorno não está autorizada no Supabase.";if(text.includes("email not confirmed"))return"Confirme o e-mail antes de entrar.";if(text.includes("invalid login credentials"))return"E-mail, username ou senha incorretos.";return error?.message||"Não foi possível concluir a operação."}
 function renderLogin(){app.innerHTML=`<main class="login"><section class="login-art"><canvas id="network-canvas" class="network-canvas"></canvas><div>${brand()}<p class="kicker" style="margin-top:28px">Comunidade estudantil</p><h1>Ideias que se conectam.</h1><p>Crie, acompanhe e compartilhe projetos que transformam o futuro da tecnologia.</p><div class="chips"><span>Criar</span><span>Colaborar</span><span>Aprender</span></div></div><small>Um espaço para dar visibilidade ao talento e criatividade.</small></section><section class="login-panel"><div class="auth"><p class="kicker">Acesso à plataforma</p><h2>Bem-vindo à TECHNA</h2><p class="auth-intro muted">Entre para acompanhar e compartilhar projetos.</p><form id="login-form" novalidate><div class="field"><label>E-mail ou username</label><input class="input" name="identifier" autocomplete="username" required></div><div class="field"><label>Senha</label><div class="password"><input id="login-password" class="input" name="password" type="password" autocomplete="current-password" minlength="6" required><button type="button" data-toggle-password="login-password">◉</button></div></div><button type="button" class="btn btn-ghost" data-action="forgot-password">Esqueci minha senha</button><p id="login-message" class="message"></p><button type="submit" class="btn btn-primary full">Entrar</button></form><div class="divider">ou continue com</div><div class="social-login"><button type="button" data-oauth="google">Google</button><button type="button" data-oauth="facebook">Facebook</button></div><p class="muted" style="text-align:center;margin-top:22px">Ainda não tem uma conta? <button type="button" class="btn btn-secondary" data-action="create-account">Criar conta</button></p></div></section></main>`;initCanvas()}
 function initCanvas(){const canvas=document.getElementById("network-canvas");if(!canvas)return;const ctx=canvas.getContext("2d");let width=0,height=0;function resize(){const ratio=Math.min(devicePixelRatio||1,2);width=canvas.clientWidth;height=canvas.clientHeight;canvas.width=width*ratio;canvas.height=height*ratio;ctx.setTransform(ratio,0,0,ratio,0,0)}function draw(){ctx.clearRect(0,0,width,height);ctx.fillStyle="#ffffff55";for(let i=0;i<45;i++){ctx.beginPath();ctx.arc((i*97+Date.now()/35)%Math.max(width,1),(i*53)%Math.max(height,1),1.5,0,Math.PI*2);ctx.fill()}requestAnimationFrame(draw)}resize();window.addEventListener("resize",resize);draw()}
-function dataProjects(){return state.projects.length?state.projects:demoProjects}function projectCard(p){return`<article class="project-card" data-project="${esc(p.id)}"><div class="project-cover">${p.imagem_capa_url?`<img src="${esc(p.imagem_capa_url)}" alt="Capa de ${esc(p.titulo)}">`:""}<h3>${esc(p.titulo)}</h3></div><div class="project-body"><p>${esc(p.descricao)}</p><div class="bar"><i style="width:${Number(p.progresso||0)}%"></i></div><div class="project-foot"><span>${Number(p.progresso||0)}% concluído</span><span class="pill">${esc(p.status||"planejamento")}</span></div></div></article>`}function projectActivity(project,updates=[]){const base={id:`created-${project.id}`,project_id:project.id,titulo:`Novo projeto: ${project.titulo}`,resumo:project.descricao||"Um novo projeto foi iniciado na TECHNA.",categoria:"Novo projeto",imagem_capa_url:project.imagem_capa_url,autor_nome:project.autor_nome||"Comunidade TECHNA",created_at:project.created_at};return[base,...updates.map(u=>({id:u.id,project_id:project.id,titulo:u.titulo||`Atualização: ${project.titulo}`,resumo:u.descricao||project.descricao||"O projeto recebeu uma atualização.",categoria:"Atualização de projeto",imagem_capa_url:project.imagem_capa_url,autor_nome:u.profiles?.nome||project.autor_nome||"Comunidade TECHNA",created_at:u.created_at}))].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))}function activityCard(n){return`<article class="news-card" data-project-news="${esc(n.project_id)}"><div class="news-image">${n.imagem_capa_url?`<img src="${esc(n.imagem_capa_url)}" alt="Capa de ${esc(n.titulo)}" loading="lazy">`:""}</div><div class="news-body"><small>${esc(n.categoria)}</small><h3>${esc(n.titulo)}</h3><p>${esc(n.resumo)}</p><span class="news-author">Por ${esc(n.autor_nome||"Comunidade TECHNA")}</span></div></article>`}function newsCard(n){return`<article class="news-card"><div class="news-image"></div><div class="news-body"><small>${esc(n.categoria||"Notícia")}</small><h3>${esc(n.titulo)}</h3><p>${esc(n.resumo)}</p></div></article>`}
-function renderNewsCarousel(items){const list=(items||[]).filter(Boolean);if(!list.length)return`<div class="empty">Ainda não há notícias para exibir.</div>`;return`<div class="news-carousel-shell" data-news-carousel><button class="news-carousel-arrow prev" type="button" data-news-carousel-prev aria-label="Notícia anterior">‹</button><div class="news-carousel-track" data-news-carousel-track>${list.map((n,i)=>`<article class="news-carousel-slide" data-news-slide="${i}"><div class="news-carousel-image" style="${n.imagem_capa_url?`background-image:url('${esc(n.imagem_capa_url)}')`:""}"></div><div class="news-carousel-copy"><small>${esc(n.categoria||"Notícia")}</small><h3>${esc(n.titulo||"Atualização da TECHNA")}</h3><p>${esc(n.resumo||"Acompanhe as novidades da comunidade.")}</p>${n.project_id?`<button class="btn btn-primary" type="button" data-project-news="${esc(n.project_id)}">Abrir projeto</button>`:""}</div></article>`).join("")}</div><button class="news-carousel-arrow next" type="button" data-news-carousel-next aria-label="Próxima notícia">›</button><div class="news-carousel-dots" role="tablist">${list.map((_,i)=>`<button class="news-carousel-dot${i===0?" active":""}" type="button" data-news-carousel-dot="${i}" aria-label="Ir para notícia ${i+1}"></button>`).join("")}</div></div>`}function stopCarousel(){if(carouselState.timer){clearInterval(carouselState.timer);carouselState.timer=null}}function updateCarousel(index,behavior="smooth"){const root=document.querySelector("[data-news-carousel]"),track=root?.querySelector("[data-news-carousel-track]"),slides=root?[...root.querySelectorAll("[data-news-slide]")]:[];if(!track||!slides.length)return;carouselState.index=(index+slides.length)%slides.length;track.scrollTo({left:slides[carouselState.index].offsetLeft,behavior});root.querySelectorAll("[data-news-carousel-dot]").forEach((d,i)=>d.classList.toggle("active",i===carouselState.index))}function startCarousel(){stopCarousel();const count=document.querySelectorAll("[data-news-slide]").length;if(count>1)carouselState.timer=setInterval(()=>{if(!carouselState.paused)updateCarousel(carouselState.index+1)},5000)}function initCarousel(){stopCarousel();const root=document.querySelector("[data-news-carousel]"),track=root?.querySelector("[data-news-carousel-track]");if(!root||!track)return;carouselState.index=0;carouselState.paused=false;root.querySelector("[data-news-carousel-prev]")?.addEventListener("click",()=>{updateCarousel(carouselState.index-1);startCarousel()});root.querySelector("[data-news-carousel-next]")?.addEventListener("click",()=>{updateCarousel(carouselState.index+1);startCarousel()});root.querySelectorAll("[data-news-carousel-dot]").forEach(d=>d.addEventListener("click",()=>{updateCarousel(Number(d.dataset.newsCarouselDot));startCarousel()}));root.addEventListener("mouseenter",()=>carouselState.paused=true);root.addEventListener("mouseleave",()=>carouselState.paused=false);let startX=0;track.addEventListener("touchstart",e=>startX=e.touches[0].clientX,{passive:true});track.addEventListener("touchend",e=>{const delta=startX-e.changedTouches[0].clientX;if(Math.abs(delta)>45)updateCarousel(carouselState.index+(delta>0?1:-1));startCarousel()},{passive:true});startCarousel()}
-function titleData(){return{dashboard:["Olá, "+(state.profile?.nome?.split(" ")[0]||"estudante")+"!","Bem-vindo ao seu espaço de projetos."],projects:["Projetos","Crie, explore e acompanhe projetos."],news:["Notícias","Acompanhe o que está acontecendo na TECHNA."],favorites:["Favoritos","Consulte seus conteúdos salvos."],voting:["Destaque do mês","A comunidade escolhe em conjunto."],suggestions:["Sugestões","Sua ideia pode melhorar a plataforma."],profile:["Meu perfil","Gerencie suas informações e seu avatar."],teacher:["Área dos professores","Acompanhe orientações e colaborações."],admin:["Administração","Gestão e moderação da plataforma."]}[state.page]}function frame(html){const [title,subtitle]=titleData();document.getElementById("pageTitle").textContent=title;document.getElementById("pageSubtitle").textContent=subtitle;document.getElementById("pageContent").innerHTML=html}async function getActivities(){let updates=[];if(state.user){const r=await supabaseClient.from("project_updates").select("*,profiles(nome)").order("created_at",{ascending:false});if(!r.error)updates=r.data||[]}const grouped={};updates.forEach(u=>(grouped[u.project_id]??=[]).push(u));return state.projects.flatMap(p=>projectActivity(p,grouped[p.id]||[])).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))}
+function dataProjects(){return state.projects.length?state.projects:demoProjects}function projectCard(p){return`<article class="project-card" data-project="${esc(p.id)}"><div class="project-cover">${p.imagem_capa_url?`<img src="${esc(p.imagem_capa_url)}" alt="Capa de ${esc(p.titulo)}">`:""}<h3>${esc(p.titulo)}</h3></div><div class="project-body"><p>${esc(p.descricao)}</p><div class="bar"><i style="width:${Number(p.progresso||0)}%"></i></div><div class="project-foot"><span>${Number(p.progresso||0)}% concluído</span><span class="pill">${esc(p.status||"planejamento")}</span></div></div></article>`}
+function projectActivity(project,updates=[]){
+  const nome=project.autor_nome||"Integrante da TECHNA";
+  const area=project.area?.trim()||"não informada";
+
+  const base={
+    id:`created-${project.id}`,
+    project_id:project.id,
+    titulo:`${nome} está desenvolvendo “${project.titulo}”`,
+    resumo:project.descricao||"Conheça este projeto da comunidade TECHNA.",
+    categoria:`Novo projeto · na área de ${area}`,
+    imagem_capa_url:project.imagem_capa_url,
+    autor_nome:nome,
+    created_at:project.created_at
+  };
+
+  return [
+    base,
+    ...updates.map(u=>({
+      id:u.id,
+      project_id:project.id,
+      titulo:u.titulo||`Atualização: ${project.titulo}`,
+      resumo:u.descricao||project.descricao||
+        "O projeto recebeu uma atualização.",
+      categoria:"Atualização de projeto",
+      imagem_capa_url:project.imagem_capa_url,
+      autor_nome:u.profiles?.nome||nome,
+      created_at:u.created_at
+    }))
+  ].sort(
+    (a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)
+  );
+}
+function activityCard(n){return`<article class="news-card" data-project-news="${esc(n.project_id)}"><div class="news-image">${n.imagem_capa_url?`<img src="${esc(n.imagem_capa_url)}" alt="Capa de ${esc(n.titulo)}" loading="lazy">`:""}</div><div class="news-body"><small>${esc(n.categoria)}</small><h3>${esc(n.titulo)}</h3><p>${esc(n.resumo)}</p><span class="news-author">Por ${esc(n.autor_nome||"Comunidade TECHNA")}</span></div></article>`}function newsCard(n){return`<article class="news-card"><div class="news-image"></div><div class="news-body"><small>${esc(n.categoria||"Notícia")}</small><h3>${esc(n.titulo)}</h3><p>${esc(n.resumo)}</p></div></article>`}
+function renderNewsCarousel(items){
+  const list=(items||[]).filter(Boolean);
+
+  if(!list.length){
+    return `<div class="empty">Ainda não há notícias para exibir.</div>`;
+  }
+
+  return `
+    <div class="news-carousel-shell" data-news-carousel>
+      <button class="news-carousel-arrow prev"
+              type="button"
+              data-news-carousel-prev
+              aria-label="Notícia anterior">‹</button>
+
+      <div class="news-carousel-track" data-news-carousel-track>
+        ${list.map((n,i)=>`
+          <article class="news-carousel-slide" data-news-slide="${i}">
+            <div class="news-carousel-image"
+                 style="${
+                   n.imagem_capa_url
+                     ?`background-image:url('${esc(n.imagem_capa_url)}')`
+                     :""
+                 }"></div>
+
+            <div class="news-carousel-copy">
+              <small>${esc(n.categoria||"Notícia")}</small>
+              <h3>${esc(n.titulo||"Atualização da TECHNA")}</h3>
+              <p>${esc(
+                n.resumo||"Acompanhe as novidades da comunidade."
+              )}</p>
+
+              ${
+                n.project_id
+                  ?`<button class="btn btn-primary"
+                             type="button"
+                             data-project-news="${esc(n.project_id)}">
+                      Saiba mais
+                    </button>`
+                  :""
+              }
+            </div>
+          </article>
+        `).join("")}
+      </div>
+
+      <button class="news-carousel-arrow next"
+              type="button"
+              data-news-carousel-next
+              aria-label="Próxima notícia">›</button>
+
+      <div class="news-carousel-dots" role="tablist">
+        ${list.map((_,i)=>`
+          <button class="news-carousel-dot${i===0?" active":""}"
+                  type="button"
+                  data-news-carousel-dot="${i}"
+                  aria-label="Ir para notícia ${i+1}"></button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+function stopCarousel(){if(carouselState.timer){clearInterval(carouselState.timer);carouselState.timer=null}}function updateCarousel(index,behavior="smooth"){const root=document.querySelector("[data-news-carousel]"),track=root?.querySelector("[data-news-carousel-track]"),slides=root?[...root.querySelectorAll("[data-news-slide]")]:[];if(!track||!slides.length)return;carouselState.index=(index+slides.length)%slides.length;track.scrollTo({left:slides[carouselState.index].offsetLeft,behavior});root.querySelectorAll("[data-news-carousel-dot]").forEach((d,i)=>d.classList.toggle("active",i===carouselState.index))}function startCarousel(){stopCarousel();const count=document.querySelectorAll("[data-news-slide]").length;if(count>1)carouselState.timer=setInterval(()=>{if(!carouselState.paused)updateCarousel(carouselState.index+1)},5000)}function initCarousel(){stopCarousel();const root=document.querySelector("[data-news-carousel]"),track=root?.querySelector("[data-news-carousel-track]");if(!root||!track)return;carouselState.index=0;carouselState.paused=false;root.querySelector("[data-news-carousel-prev]")?.addEventListener("click",()=>{updateCarousel(carouselState.index-1);startCarousel()});root.querySelector("[data-news-carousel-next]")?.addEventListener("click",()=>{updateCarousel(carouselState.index+1);startCarousel()});root.querySelectorAll("[data-news-carousel-dot]").forEach(d=>d.addEventListener("click",()=>{updateCarousel(Number(d.dataset.newsCarouselDot));startCarousel()}));root.addEventListener("mouseenter",()=>carouselState.paused=true);root.addEventListener("mouseleave",()=>carouselState.paused=false);let startX=0;track.addEventListener("touchstart",e=>startX=e.touches[0].clientX,{passive:true});track.addEventListener("touchend",e=>{const delta=startX-e.changedTouches[0].clientX;if(Math.abs(delta)>45)updateCarousel(carouselState.index+(delta>0?1:-1));startCarousel()},{passive:true});startCarousel()}
+function titleData(){return{dashboard:["Olá, "+(state.profile?.nome?.split(" ")[0]||"estudante")+"!","Bem-vindo ao seu espaço de projetos."],projects:["Projetos","Crie, explore e acompanhe projetos."],news:["Notícias","Acompanhe o que está acontecendo na TECHNA."],favorites:["Favoritos","Consulte seus conteúdos salvos."],voting:["Destaque do mês","A comunidade escolhe em conjunto."],suggestions:["Sugestões","Sua ideia pode melhorar a plataforma."],profile:["Meu perfil","Gerencie suas informações e seu avatar."],teacher:["Área dos professores","Acompanhe orientações e colaborações."],admin:["Administração","Gestão e moderação da plataforma."]}[state.page]}function frame(html){const [title,subtitle]=titleData();document.getElementById("pageTitle").textContent=title;document.getElementById("pageSubtitle").textContent=subtitle;document.getElementById("pageContent").innerHTML=html}
+async function getActivities(){
+  let updates=[];
+
+  if(state.user){
+    const r=await supabaseClient
+      .from("project_updates")
+      .select("*,profiles(nome)")
+      .order("created_at",{ascending:false});
+
+    if(r.error){
+      console.error("Erro ao carregar atualizações:",r.error);
+    }else{
+      updates=r.data||[];
+    }
+  }
+
+  const grouped={};
+
+  updates.forEach(u=>{
+    (grouped[u.project_id]??=[]).push(u);
+  });
+
+  const authorIds=[
+    ...new Set(
+      state.projects
+        .map(p=>p.autora_id)
+        .filter(Boolean)
+    )
+  ];
+
+  const authorNames=new Map();
+
+  if(authorIds.length){
+    const result=await supabaseClient
+      .from("profiles")
+      .select("id,nome,username")
+      .in("id",authorIds);
+
+    if(result.error){
+      console.error("Erro ao carregar autores:",result.error);
+    }else{
+      (result.data||[]).forEach(profile=>{
+        authorNames.set(
+          String(profile.id),
+          profile.nome||profile.username||"Integrante da TECHNA"
+        );
+      });
+    }
+  }
+
+  return state.projects
+    .flatMap(project=>{
+      const projetoComAutor={
+        ...project,
+        autor_nome:
+          authorNames.get(String(project.autora_id))||
+          project.autor_nome||
+          "Integrante da TECHNA"
+      };
+
+      return projectActivity(
+        projetoComAutor,
+        grouped[project.id]||[]
+      );
+    })
+    .sort(
+      (a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)
+    );
+}
 async function dashboard(){const ps=state.projects.filter(
   project=>String(project.autora_id)===String(state.user?.id)
 ),activities=state.projects.length?await getActivities():[],feed=activities.length?activities:demoNews;frame(`<div class="stats"><article class="stat"><small>Meus projetos</small><b>${ps.length}</b></article><article class="stat"><small>Em acompanhamento</small><b>0</b></article><article class="stat"><small>Convites</small><b>0</b></article><article class="stat"><small>Progresso médio</small><b>${ps.length?Math.round(ps.reduce((a,p)=>a+Number(p.progresso||0),0)/ps.length):0}%</b></article></div><div class="dash-grid"><section class="card wide"><div class="card-head"><h2>Notícias em destaque</h2><p>Atualizações da comunidade TECHNA.</p></div>${renderNewsCarousel(feed.slice(0,8))}</section><section class="card wide"><div class="card-head"><h2>Notícias recentes</h2><button class="btn btn-ghost" data-page="news">Ver todas</button></div><div class="horizontal">${feed.slice(0,8).map(n=>n.project_id?activityCard(n):newsCard(n)).join("")}</div></section><section class="card"><div class="card-head"><h2>Meus projetos</h2><button class="btn btn-primary" data-action="new-project">Novo projeto</button></div><div class="project-grid">${ps.slice(0,4).map(projectCard).join("")}</div></section></div>`);initCarousel()}
