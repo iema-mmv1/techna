@@ -1391,7 +1391,13 @@ function renderApp(){
   app.innerHTML=`
     <div class="layout techna-layout">
       <header class="techna-header">
-        ${brand()}
+                ${brand()}
+
+        <button type="button"
+                class="techna-mobile-menu-button"
+                data-action="mobile-menu"
+                aria-label="Abrir menu de navegação"
+                aria-expanded="false">☰</button>
 
         <nav class="techna-header-nav" aria-label="Navegação principal">
           <button type="button" data-action="new-project">Novo projeto</button>
