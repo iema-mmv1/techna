@@ -1480,6 +1480,36 @@ z-index:40;
   background: transparent;
   box-shadow: none;
 }
+.project-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.project-card-actions button {
+  min-height: 36px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  font-weight: 800;
+}
+
+.project-card-edit {
+  border: 1px solid var(--line);
+  color: var(--p);
+  background: #fff;
+}
+
+.project-card-delete {
+  border: 1px solid #f0cecb;
+  color: var(--danger);
+  background: #fff7f6;
+}
+
+.project-card-actions button:focus-visible {
+  outline: 2px solid var(--p);
+  outline-offset: 2px;
+}
 </style>
 </head>
 <body>
