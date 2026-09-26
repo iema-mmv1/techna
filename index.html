@@ -4345,7 +4345,13 @@ document.addEventListener("click",async e=>{
     }
 
     if(n==="notifications"){
-  if(document.querySelector(".techna-profile-menu.is-open")) return;
+  document.querySelectorAll(".techna-profile-menu.is-open")
+    .forEach(wrapper=>{
+      wrapper.classList.remove("is-open");
+      wrapper.querySelector(".techna-profile-trigger")
+        ?.setAttribute("aria-expanded","false");
+    });
+
   showToast("Você não tem novas notificações.", true);
 }
   }
