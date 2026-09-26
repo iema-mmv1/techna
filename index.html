@@ -3381,20 +3381,23 @@ async function saveProjectEdit(e){
   try{
     let ordem=0;
 
-      for(const image of album.images){
-      if(!image.removed||!image.id)continue;
+    for(const image of album.images){
+      if(image.removed||!image.file)continue;
 
-      const result=await supabaseClient
+      const uploadedUrl=await uploadProjectCover(image.file);
+
+      const insertResult=await supabaseClient
         .from("project_images")
-        .update({deleted_at:new Date().toISOString()})
-        .eq("id",image.id)
-        .eq("project_id",id)
-        .is("deleted_at",null)
+        .insert({
+          project_id:id,
+          uploaded_by:state.user.id,
+          arquivo_url:uploadedUrl,
+          ordem:ordem++
+        })
         .select("id")
         .single();
 
-      if(result.error)throw result.error;
-    }
+      if(insertResult.error)throw insertResult.error;
 
       if(album.coverUrl===image.url){
         album.coverUrl=uploadedUrl;
@@ -3402,20 +3405,25 @@ async function saveProjectEdit(e){
 
       URL.revokeObjectURL(image.url);
       image.url=uploadedUrl;
-      image.id=result.data.id;
+      image.id=insertResult.data.id;
       image.file=null;
     }
 
     for(const image of album.images){
       if(!image.removed||!image.id)continue;
 
-      const result=await supabaseClient
+      const removeResult=await supabaseClient
         .from("project_images")
-        .delete()
+        .update({
+          deleted_at:new Date().toISOString()
+        })
         .eq("id",image.id)
-        .eq("project_id",id);
+        .eq("project_id",id)
+        .is("deleted_at",null)
+        .select("id")
+        .single();
 
-      if(result.error)throw result.error;
+      if(removeResult.error)throw removeResult.error;
     }
 
     const imagem_capa_url=album.coverUrl||null;
