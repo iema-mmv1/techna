@@ -1026,7 +1026,19 @@ async function loadProjectInteractions(projectId){
 
     supabaseClient
       .from("project_comments")
-      .select("*,profiles(nome)")
+      .select(`
+  id,
+  project_id,
+  author_id,
+  conteudo,
+  status,
+  created_at,
+  profiles!project_comments_author_id_fkey(
+    nome,
+    username,
+    fotourl
+  )
+`)
       .eq("project_id",projectId)
       .eq("status","publicado")
       .order("created_at",{ascending:false}),
