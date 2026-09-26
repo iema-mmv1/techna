@@ -2922,8 +2922,29 @@ document.addEventListener("click",async e=>{
   const project=e.target.closest(".project-card[data-project]");
   const projectNews=e.target.closest("[data-project-news]");
 
-    if(p){
+      if(p){
     e.preventDefault();
+
+    document.querySelector(".techna-header-nav")
+      ?.classList.remove("is-open");
+
+    document.body.classList.remove("mobile-nav-open");
+
+    const botaoMenu=document.querySelector(
+      ".techna-mobile-menu-button"
+    );
+
+    if(botaoMenu){
+      botaoMenu.setAttribute("aria-expanded","false");
+      botaoMenu.setAttribute(
+        "aria-label",
+        "Abrir menu de navegação"
+      );
+      botaoMenu.textContent="☰";
+    }
+
+    goPage(p.dataset.page);
+  }
     document.querySelector(".techna-header-nav")?.classList.remove("is-open");
     document.querySelector(".techna-mobile-menu-button")
       ?.setAttribute("aria-expanded","false");
