@@ -1981,7 +1981,27 @@ function termsPage() {
     </article>
   `);
 }
-async function goPage(page){state.page=page;await({dashboard,projects:projectsPage,news:newsPage,profile:profilePage,favorites:simplePage,voting:simplePage,suggestions:simplePage,teacher:simplePage,admin:simplePage}[page]||dashboard)()}
+async function goPage(page) {
+  state.page = page;
+
+  const pages = {
+    dashboard,
+    projects: projectsPage,
+    news: newsPage,
+    profile: profilePage,
+    favorites: simplePage,
+    voting: simplePage,
+    suggestions: simplePage,
+    teacher: simplePage,
+    admin: simplePage,
+    about: aboutPage,
+    team: teamPage,
+    privacy: privacyPage,
+    terms: termsPage
+  };
+
+  await (pages[page] || dashboard)();
+}
 function renderApp(){
   const p=state.profile;
 
