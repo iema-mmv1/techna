@@ -2244,14 +2244,17 @@ async function dashboard(){
         }</b>
       </button>
 
-      <article class="stat">
+            <button type="button"
+              class="stat"
+              data-action="dashboard-colaboradores"
+              style="text-align:left;cursor:pointer;">
         <small>Colaboram comigo</small>
         <b>${
           colaboradoresResult.error
             ?"—"
             :colaboradores.size
         }</b>
-      </article>
+      </button>
 
       <article class="stat">
         <small>Convites</small>
@@ -4537,6 +4540,146 @@ async function abrirPedidosDoDashboard(){
             </p>`
       }
     </div>
+  `);
+}
+async function abrirColaboradoresDoDashboard(){
+  const meusProjetos=state.projects.filter(
+    project=>
+      String(project.autora_id)===String(state.user?.id)
+  );
+
+  if(!meusProjetos.length){
+    openModal(
+      "Colaboram comigo",
+      `<p class="empty">
+         Você ainda não tem projetos com colaboradores.
+       </p>`
+    );
+    return;
+  }
+
+  const membrosResult=await supabaseClient
+    .from("project_members")
+    .select("project_id,user_id,funcao")
+    .in(
+      "project_id",
+      meusProjetos.map(project=>project.id)
+    );
+
+  if(membrosResult.error){
+    console.error(
+      "Erro ao carregar colaboradores:",
+      membrosResult.error
+    );
+    showToast("Não foi possível carregar os colaboradores.");
+    return;
+  }
+
+  const membros=(membrosResult.data||[]).filter(
+    membro=>
+      String(membro.user_id)!==String(state.user.id)
+  );
+
+  const usuariosIds=[
+    ...new Set(
+      membros.map(membro=>membro.user_id)
+        .filter(Boolean)
+    )
+  ];
+
+  const perfisResult=usuariosIds.length
+    ?await supabaseClient
+      .from("profiles")
+      .select("id,nome,username,foto_url")
+      .in("id",usuariosIds)
+    :{data:[],error:null};
+
+  if(perfisResult.error){
+    console.error(
+      "Erro ao carregar perfis dos colaboradores:",
+      perfisResult.error
+    );
+    showToast(
+      "Não foi possível carregar os nomes dos colaboradores."
+    );
+    return;
+  }
+
+  const projetosPorId=new Map(
+    meusProjetos.map(project=>[
+      String(project.id),
+      project
+    ])
+  );
+
+  const perfisPorId=new Map(
+    (perfisResult.data||[]).map(perfil=>[
+      String(perfil.id),
+      perfil
+    ])
+  );
+
+  const vistos=new Set();
+
+  const colaboradores=membros.filter(membro=>{
+    const chave=
+      `${String(membro.project_id)}:${String(membro.user_id)}`;
+
+    if(vistos.has(chave))return false;
+    vistos.add(chave);
+    return projetosPorId.has(String(membro.project_id));
+  });
+
+  openModal("Colaboram comigo",`
+    ${
+      colaboradores.length
+        ?colaboradores.map(membro=>{
+          const projeto=projetosPorId.get(
+            String(membro.project_id)
+          );
+          const perfil=perfisPorId.get(
+            String(membro.user_id)
+          );
+          const nome=perfil?.nome||
+                     perfil?.username||
+                     "Usuário";
+
+          return `
+            <article class="participation-request">
+              <span class="project-person-avatar">
+                ${
+                  perfil?.foto_url
+                    ?`<img src="${esc(perfil.foto_url)}"
+                            alt="Foto de ${esc(nome)}">`
+                    :esc(initials(nome))
+                }
+              </span>
+
+              <div class="participation-request-info">
+                <strong>${esc(nome)}</strong>
+                <p>Projeto: ${esc(projeto.titulo)}</p>
+                ${
+                  membro.funcao
+                    ?`<small>${esc(membro.funcao)}</small>`
+                    :""
+                }
+              </div>
+
+              <div class="participation-request-actions">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-action="abrir-projeto-colaborador"
+                        data-project="${esc(projeto.id)}">
+                  Abrir projeto
+                </button>
+              </div>
+            </article>
+          `;
+        }).join("")
+        :`<p class="empty">
+            Ninguém está colaborando nos seus projetos ainda.
+          </p>`
+    }
   `);
 }
   
