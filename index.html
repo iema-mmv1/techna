@@ -5355,54 +5355,47 @@ setInterval(technaRefreshBell,15000);
 let technaPendingCountRefreshing=false;
 
 async function technaRefreshPendingRequestsCount(){
-  if(technaPendingCountRefreshing)return;
-  if(!state.user || state.page!=="dashboard")return;
-
-  const counter=document.querySelector(
-    '[data-action="dashboard-pedidos"] b'
-  );
-  if(!counter)return;
+  if(technaPendingCountRefreshing || !state.user)return;
 
   const userId=state.user.id;
   const meusProjetos=state.projects.filter(
     project=>String(project.autora_id)===String(userId)
   );
 
-  if(!meusProjetos.length){
-    counter.textContent="0";
-    return;
-  }
-
   technaPendingCountRefreshing=true;
 
   try{
-    const result=await supabaseClient
-      .from("project_participation_requests")
-      .select("id,project_id")
-      .eq("status","pendente")
-      .in(
-        "project_id",
-        meusProjetos.map(project=>project.id)
-      );
+    let total=0;
 
-    if(result.error){
-      console.error(
-        "Erro ao atualizar número de pedidos:",
-        result.error
-      );
-      return;
+    if(meusProjetos.length){
+      const result=await supabaseClient
+        .from("project_participation_requests")
+        .select("id,project_id")
+        .eq("status","pendente")
+        .in(
+          "project_id",
+          meusProjetos.map(project=>project.id)
+        );
+
+      if(result.error){
+        console.error(
+          "Erro ao atualizar número de pedidos:",
+          result.error
+        );
+        return;
+      }
+
+      total=(result.data||[]).length;
     }
 
     if(state.user?.id!==userId)return;
 
-    const currentCounter=document.querySelector(
+    const counter=document.querySelector(
       '[data-action="dashboard-pedidos"] b'
     );
 
-    if(currentCounter){
-      currentCounter.textContent=String(
-        (result.data||[]).length
-      );
+    if(counter){
+      counter.textContent=String(total);
     }
   }catch(error){
     console.error(
