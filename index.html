@@ -3428,8 +3428,23 @@ function projectInteractionsHtml(project,interactions,participant=false){
           <h3>Participar do projeto</h3>
           ${
             request
-            ?`<p class="muted">Pedido: <strong>${esc(request.status)}</strong></p>`
-            :`
+?`
+  <p class="muted">
+    Pedido: <strong>${esc(request.status)}</strong>
+  </p>
+  ${
+    request.status==="pendente"
+      ?`<button
+           type="button"
+           class="btn btn-secondary"
+           data-action="cancel-participation-request"
+           data-project="${esc(project.id)}">
+           Cancelar pedido
+         </button>`
+      :""
+  }
+`
+:`
               <form id="participation-form" data-project="${esc(project.id)}">
                 <div class="field">
                   <textarea
@@ -3932,6 +3947,41 @@ async function requestProjectParticipation(e){
   showToast("Pedido de participação enviado.");
   await openProject(projectId);
 }
+async function cancelProjectParticipation(projectId, button){
+  if(!state.user || !projectId)return;
+
+  button.disabled=true;
+
+  try{
+    const result=await supabaseClient
+      .from("project_participation_requests")
+      .delete()
+      .eq("project_id",projectId)
+      .eq("requester_id",state.user.id)
+      .eq("status","pendente")
+      .select("id");
+
+    if(result.error){
+      showToast(authError(result.error));
+      return;
+    }
+
+    if(!result.data?.length){
+      showToast(
+        "Não foi possível cancelar o pedido. Verifique a permissão de cancelamento."
+      );
+      return;
+    }
+
+    showToast("Pedido de participação cancelado.");
+    await openProject(projectId);
+  }catch(error){
+    console.error("Erro ao cancelar pedido:",error);
+    showToast("Não foi possível cancelar o pedido.");
+  }finally{
+    button.disabled=false;
+  }
+}
 function profileModal(){const p=state.profile||{},email=state.user?.email||"";openModal("Editar meu perfil",`<form id="profile-form"><div class="profile-avatar-editor">${avatar(p,true)}<div><strong>Imagem do perfil</strong><p class="muted">Escolha uma imagem para aparecer no seu perfil.</p><input class="input" type="file" name="foto" accept="image/*"><img id="profile-preview" class="cover-preview hidden" alt="Pré-visualização"></div></div><div class="form-grid"><div class="field span-2"><label>Nome completo</label><input class="input" name="nome" value="${esc(p.nome||"")}" required></div><div class="field"><label>Username</label><input class="input" name="username" value="${esc(p.username||"")}" required></div><div class="field"><label>E-mail</label><input class="input" value="${esc(email)}" disabled></div><div class="field"><label>Curso</label><select class="select" name="curso"><option value="">Escolha seu curso</option><option ${p.curso==="Marketing"?"selected":""}>Marketing</option><option ${p.curso==="Administração"?"selected":""}>Administração</option><option ${p.curso==="Informática"?"selected":""}>Informática</option></select></div><div class="field"><label>Nova senha</label><input class="input" type="password" name="password" minlength="6" placeholder="Deixe vazio para manter"></div><div class="field span-2"><label>Confirmação da nova senha</label><input class="input" type="password" name="password2" minlength="6" placeholder="Repita a nova senha"></div></div><p id="profile-message" class="message"></p><div class="profile-actions"><button type="submit" class="btn btn-primary">Salvar alterações</button><button type="button" class="btn btn-ghost" data-action="send-password-reset">Enviar link de redefinição</button></div></form>`);document.querySelector('[name="foto"]')?.addEventListener("change",e=>{const f=e.target.files?.[0],img=document.getElementById("profile-preview");if(f&&img){img.src=URL.createObjectURL(f);img.classList.remove("hidden")}})}
 let newProjectAlbum=[];
 
@@ -4338,6 +4388,18 @@ document.addEventListener("submit",e=>{
   if(e.target.id==="profile-form")saveProfile(e);
   if(e.target.id==="comment-form")createProjectComment(e);
   if(e.target.id==="participation-form")requestProjectParticipation(e);
+});
+document.addEventListener("click",async event=>{
+  const button=event.target.closest(
+    '[data-action="cancel-participation-request"]'
+  );
+
+  if(!button)return;
+
+  await cancelProjectParticipation(
+    button.dataset.project,
+    button
+  );
 });
 function showConfirmation({
   title,
