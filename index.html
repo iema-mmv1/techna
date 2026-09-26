@@ -1595,6 +1595,12 @@ z-index:40;
   color: #edf8c5;
   text-decoration: underline;
 }
+.comment-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
 </style>
 </head>
 <body>
@@ -3211,11 +3217,14 @@ function projectInteractionsHtml(project,interactions,participant=false){
         ${
           interactions.comments.length
           ?interactions.comments.map(c=>`
-            <article class="comment-item">
-  <strong>${esc(c.profiles?.nome||c.profiles?.username||"Usuário")}</strong>
-  <span>${esc(c.conteudo)}</span>
-  <small>${new Date(c.created_at).toLocaleString("pt-BR")}</small>
-</article>
+              <article class="comment-item">
+              <div class="comment-author">
+                ${avatar(c.profiles||{nome:"Usuário"})}
+                <strong>${esc(c.profiles?.nome||c.profiles?.username||"Usuário")}</strong>
+              </div>
+              <span>${esc(c.conteudo)}</span>
+              <small>${new Date(c.created_at).toLocaleString("pt-BR")}</small>
+            </article>
           `).join("")
           :`<p class="muted">Ainda não há comentários.</p>`
         }
