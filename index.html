@@ -5762,6 +5762,7 @@ async function abrirPedidosDoDashboard(){
   }
 
   const pedidos=pedidosResult.data||[];
+
   const solicitantesIds=[
     ...new Set(
       pedidos.map(pedido=>pedido.requester_id)
@@ -5821,15 +5822,21 @@ async function abrirPedidosDoDashboard(){
                 <span class="project-person-avatar">
                   ${
                     perfil?.foto_url
-                      ?`<img src="${esc(perfil.foto_url)}"
-                              alt="Foto de ${esc(nome)}">`
+                      ?`<img
+                          src="${esc(perfil.foto_url)}"
+                          alt="Foto de ${esc(nome)}">`
                       :esc(initials(nome))
                   }
                 </span>
 
                 <div class="participation-request-info">
-                  <strong>${esc(nome)}</strong>
+                  <p>
+                    <strong>${esc(nome)}</strong>
+                    pediu para participar deste projeto:
+                  </p>
+
                   ${resumoProjetoParticipacao(projeto)}
+
                   ${
                     pedido.mensagem
                       ?`<p>${esc(pedido.mensagem)}</p>`
@@ -5838,21 +5845,23 @@ async function abrirPedidosDoDashboard(){
                 </div>
 
                 <div class="participation-request-actions">
-                  <button type="button"
-                          class="btn btn-primary"
-                          data-action="decide-participation"
-                          data-request-id="${esc(pedido.id)}"
-                          data-project-id="${esc(pedido.project_id)}"
-                          data-decision="aceita">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-action="decide-participation"
+                    data-request-id="${esc(pedido.id)}"
+                    data-project-id="${esc(pedido.project_id)}"
+                    data-decision="aceita">
                     Aceitar
                   </button>
 
-                  <button type="button"
-                          class="btn btn-danger"
-                          data-action="decide-participation"
-                          data-request-id="${esc(pedido.id)}"
-                          data-project-id="${esc(pedido.project_id)}"
-                          data-decision="recusada">
+                  <button
+                    type="button"
+                    class="btn btn-danger"
+                    data-action="decide-participation"
+                    data-request-id="${esc(pedido.id)}"
+                    data-project-id="${esc(pedido.project_id)}"
+                    data-decision="recusada">
                     Recusar
                   </button>
                 </div>
