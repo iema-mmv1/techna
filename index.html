@@ -3058,7 +3058,7 @@ async function openProject(id){
         </div>
         <p class="muted">${Number(p.progresso||0)}% concluído</p>
 
-        ${
+               ${
           owner
             ? `<div class="project-actions">
                  <button class="btn btn-primary"
@@ -3074,7 +3074,16 @@ async function openProject(id){
                    Excluir projeto
                  </button>
                </div>`
-            : ""
+            : participant
+              ? `<div class="project-actions">
+                   <button class="btn btn-danger"
+                           type="button"
+                           data-action="leave-project"
+                           data-project="${esc(id)}">
+                     Sair do projeto
+                   </button>
+                 </div>`
+              : ""
         }
       </div>
     </div>
@@ -3133,12 +3142,25 @@ async function openProject(id){
                              : esc(initials(name))
                          }
                        </span>
-                       <span>
+                                              <span>
                          <strong>${esc(name)}</strong>
                          <small>
                            ${esc(member.funcao||"Participante")}
                          </small>
                        </span>
+                       ${
+                         owner &&
+                         String(member.user_id)!==String(p.autora_id)
+                           ? `<button
+                                type="button"
+                                class="btn btn-danger"
+                                data-action="remove-project-member"
+                                data-project="${esc(id)}"
+                                data-user="${esc(member.user_id)}">
+                                Remover
+                              </button>`
+                           : ""
+                       }
                      </div>
                    `;
                  }).join("")}
