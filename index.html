@@ -1917,6 +1917,35 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
   margin:0;
   border-radius:50%;
 }
+#edit-project-form .edit-member-tooltip{
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  z-index:10;
+  width:max-content;
+  max-width:180px;
+  padding:5px 8px;
+  border-radius:6px;
+  background:#222;
+  color:#fff;
+  font-size:12px;
+  font-weight:500;
+  line-height:1.3;
+  text-align:center;
+  white-space:normal;
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transform:translateX(-50%);
+}
+
+#edit-project-form .project-person:hover
+.edit-member-tooltip,
+#edit-project-form .project-person:focus-within
+.edit-member-tooltip{
+  opacity:1;
+  visibility:visible;
+}
 </style>
 </head>
 <body>
