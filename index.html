@@ -7814,6 +7814,24 @@ document.addEventListener("click",async event=>{
       project=>String(project.autora_id)===String(teacherId)
     );
 
+    const orientacoesResult=await supabaseClient
+      .from("project_members")
+      .select("project_id,funcao")
+      .eq("user_id",teacherId)
+      .ilike("funcao","orientador");
+
+    if(orientacoesResult.error)throw orientacoesResult.error;
+
+    const idsOrientados=new Set(
+      (orientacoesResult.data||[]).map(
+        item=>String(item.project_id)
+      )
+    );
+
+    const projetosOrientados=state.projects.filter(
+      project=>idsOrientados.has(String(project.id))
+    );
+    
     openModal(esc(professor.nome),`
       <div class="profile-head">
         ${avatar(professor,true)}
@@ -7853,6 +7871,21 @@ document.addEventListener("click",async event=>{
               </div>`
             :`<p class="muted">
                 Nenhum projeto criado até o momento.
+               </p>`
+        }
+      </section>
+
+      <section class="project-section">
+        <h3>Projetos orientados</h3>
+        ${
+          projetosOrientados.length
+            ?`<div class="project-grid">
+                ${projetosOrientados.map(
+                  project=>projectCard(project,false)
+                ).join("")}
+              </div>`
+            :`<p class="muted">
+                Nenhum projeto orientado para exibir no momento.
               </p>`
         }
       </section>
