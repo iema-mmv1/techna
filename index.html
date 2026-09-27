@@ -2435,6 +2435,71 @@ async function dashboard(){
       </svg>
     `;
   };
+  
+const progressoMedio=meusProjetos.length
+    ?Math.round(
+      meusProjetos.reduce(
+        (total,project)=>
+          total+Number(project.progresso||0),
+        0
+      )/meusProjetos.length
+    )
+    :0;
+
+  const statItems=[
+    {
+      label:"Meus projetos",
+      icon:"projects",
+      value:meusProjetos.length,
+      max:20
+    },
+    {
+      label:"Projetos concluídos",
+      icon:"completed",
+      value:meusProjetos.filter(
+        project=>project.status==="concluido"
+      ).length,
+      max:50
+    },
+    {
+      label:"Em acompanhamento",
+      icon:"following",
+      value:membrosResult.error?"—":acompanhamentos.length,
+      max:50,
+      action:"dashboard-acompanhamentos"
+    },
+    {
+      label:"Pedidos de participação",
+      icon:"requests",
+      value:pedidosResult.error?"—":pedidosPendentes.length,
+      max:50,
+      action:"dashboard-pedidos"
+    },
+    {
+      label:"Colaboram comigo",
+      icon:"collaborators",
+      value:colaboradoresResult.error?"—":colaboradores.size,
+      max:50,
+      action:"dashboard-colaboradores"
+    },
+    {
+      label:"Convites",
+      icon:"invitations",
+      value:convitesResult.error
+        ?"—"
+        :(convitesResult.data||[]).length,
+      max:50,
+      action:"dashboard-convites"
+    },
+    {
+      label:"Progresso médio",
+      icon:"progress",
+      value:progressoMedio,
+      max:100,
+      percent:true
+    }
+  ];
+  
   frame(`
     <div class="stats">
       <article class="stat">
