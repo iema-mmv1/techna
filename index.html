@@ -5899,15 +5899,35 @@ async function abrirColaboradoresDoDashboard(){
     return;
   }
 
-  const membros=(membrosResult.data||[]).filter(
-    membro=>
-      String(membro.user_id)!==String(state.user.id)
+  const projetosPorId=new Map(
+    meusProjetos.map(project=>[
+      String(project.id),
+      project
+    ])
   );
+
+  const vistos=new Set();
+
+  const colaboradores=(membrosResult.data||[])
+    .filter(membro=>{
+      if(
+        !membro.user_id ||
+        String(membro.user_id)===String(state.user.id) ||
+        !projetosPorId.has(String(membro.project_id))
+      )return false;
+
+      const chave=
+        `${String(membro.project_id)}:${String(membro.user_id)}`;
+
+      if(vistos.has(chave))return false;
+
+      vistos.add(chave);
+      return true;
+    });
 
   const usuariosIds=[
     ...new Set(
-      membros.map(membro=>membro.user_id)
-        .filter(Boolean)
+      colaboradores.map(membro=>membro.user_id)
     )
   ];
 
@@ -5929,13 +5949,6 @@ async function abrirColaboradoresDoDashboard(){
     return;
   }
 
-  const projetosPorId=new Map(
-    meusProjetos.map(project=>[
-      String(project.id),
-      project
-    ])
-  );
-
   const perfisPorId=new Map(
     (perfisResult.data||[]).map(perfil=>[
       String(perfil.id),
@@ -5943,58 +5956,93 @@ async function abrirColaboradoresDoDashboard(){
     ])
   );
 
-  const vistos=new Set();
+  const membrosPorProjeto=new Map();
 
-  const colaboradores=membros.filter(membro=>{
-    const chave=
-      `${String(membro.project_id)}:${String(membro.user_id)}`;
+  for(const membro of colaboradores){
+    const projectId=String(membro.project_id);
 
-    if(vistos.has(chave))return false;
-    vistos.add(chave);
-    return projetosPorId.has(String(membro.project_id));
-  });
+    if(!membrosPorProjeto.has(projectId)){
+      membrosPorProjeto.set(projectId,[]);
+    }
+
+    membrosPorProjeto.get(projectId).push(membro);
+  }
+
+  const projetosComColaboradores=meusProjetos.filter(
+    projeto=>membrosPorProjeto.has(String(projeto.id))
+  );
 
   openModal("Colaboram comigo",`
     <div class="participation-card-grid">
       ${
-        colaboradores.length
-          ?colaboradores.map(membro=>{
-            const projeto=projetosPorId.get(
-              String(membro.project_id)
-            );
-            const perfil=perfisPorId.get(
-              String(membro.user_id)
-            );
-            const nome=perfil?.nome||
-                       perfil?.username||
-                       "Usuário";
+        projetosComColaboradores.length
+          ?projetosComColaboradores.map(projeto=>{
+            const membrosDoProjeto=
+              membrosPorProjeto.get(String(projeto.id));
 
             return `
               <article class="participation-request">
-                <span class="project-person-avatar">
-                  ${
-                    perfil?.foto_url
-                      ?`<img src="${esc(perfil.foto_url)}"
-                              alt="Foto de ${esc(nome)}">`
-                      :esc(initials(nome))
-                  }
-                </span>
-
                 <div class="participation-request-info">
-                  <strong>${esc(nome)}</strong>
+                  <p>
+                    Estão colaborando com você neste projeto:
+                  </p>
+
                   ${resumoProjetoParticipacao(projeto)}
-                  ${
-                    membro.funcao
-                      ?`<small>${esc(membro.funcao)}</small>`
-                      :""
-                  }
+
+                  <div
+                    style="display:flex;
+                           flex-wrap:wrap;
+                           gap:12px;
+                           align-items:center;
+                           margin-top:12px;">
+                    ${
+                      membrosDoProjeto.map(membro=>{
+                        const perfil=perfisPorId.get(
+                          String(membro.user_id)
+                        );
+                        const nome=perfil?.nome||
+                                   perfil?.username||
+                                   "Colaborador";
+
+                        return `
+                          <span
+                            title="${esc(nome)}"
+                            aria-label="${esc(nome)}"
+                            style="display:inline-grid;
+                                   flex:0 0 48px;
+                                   width:48px;
+                                   height:48px;
+                                   place-items:center;
+                                   overflow:hidden;
+                                   border-radius:50%;
+                                   background:var(--p);">
+                            ${
+                              perfil?.foto_url
+                                ?`<img
+                                    src="${esc(perfil.foto_url)}"
+                                    alt="${esc(nome)}"
+                                    title="${esc(nome)}"
+                                    style="display:block;
+                                           width:100%;
+                                           height:100%;
+                                           object-fit:cover;">`
+                                :`<span title="${esc(nome)}">
+                                    ${esc(initials(nome))}
+                                  </span>`
+                            }
+                          </span>
+                        `;
+                      }).join("")
+                    }
+                  </div>
                 </div>
 
                 <div class="participation-request-actions">
-                  <button type="button"
-                          class="btn btn-secondary"
-                          data-action="abrir-projeto-colaborador"
-                          data-project="${esc(projeto.id)}">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-action="abrir-projeto-colaborador"
+                    data-project="${esc(projeto.id)}">
                     Abrir projeto
                   </button>
                 </div>
@@ -6065,71 +6113,78 @@ async function abrirConvitesDoDashboard(){
 
   openModal("Convites recebidos",`
     <div class="participation-card-grid">
-    ${
-      convites.length
-        ?convites.map(convite=>{
-          const projeto=projetosPorId.get(
-            String(convite.project_id)
+      ${
+        convites.length
+          ?convites.map(convite=>{
+            const projeto=projetosPorId.get(
+              String(convite.project_id)
             );
-          const perfil=perfisPorId.get(
-            String(convite.invited_by)
-          );
-          const nome=perfil?.nome||
-                     perfil?.username||
-                     "Usuário";
+            const perfil=perfisPorId.get(
+              String(convite.invited_by)
+            );
+            const nome=perfil?.nome||
+                       perfil?.username||
+                       "Usuário";
 
-          return `
-            <article class="participation-request">
-              <span class="project-person-avatar">
-                ${
-                  perfil?.foto_url
-                    ?`<img src="${esc(perfil.foto_url)}"
-                            alt="Foto de ${esc(nome)}">`
-                    :esc(initials(nome))
-                }
-              </span>
+            return `
+              <article class="participation-request">
+                <span class="project-person-avatar">
+                  ${
+                    perfil?.foto_url
+                      ?`<img
+                          src="${esc(perfil.foto_url)}"
+                          alt="Foto de ${esc(nome)}">`
+                      :esc(initials(nome))
+                  }
+                </span>
 
-              <div class="participation-request-info">
-                <strong>${esc(nome)}</strong>
-                <p>Convidou você para participar do projeto:</p>
-                ${resumoProjetoParticipacao(projeto)}
-              </div>
+                <div class="participation-request-info">
+                  <p>
+                    <strong>${esc(nome)}</strong>
+                    convidou você para participar deste projeto:
+                  </p>
 
-                            <div class="participation-request-actions">
-                ${
-                  projeto
-                    ?`<button type="button"
-                              class="btn btn-secondary"
-                              data-action="abrir-projeto-convite"
-                              data-project="${esc(projeto.id)}">
-                        Ver projeto
-                      </button>`
-                    :""
-                }
+                  ${resumoProjetoParticipacao(projeto)}
+                </div>
 
-                <button type="button"
-                        class="btn btn-primary"
-                        data-action="decidir-convite"
-                        data-invitation-id="${esc(convite.id)}"
-                        data-decision="aceitar">
-                  Aceitar
-                </button>
+                <div class="participation-request-actions">
+                  ${
+                    projeto
+                      ?`<button
+                          type="button"
+                          class="btn btn-secondary"
+                          data-action="abrir-projeto-convite"
+                          data-project="${esc(projeto.id)}">
+                          Ver projeto
+                        </button>`
+                      :""
+                  }
 
-                <button type="button"
-                        class="btn btn-danger"
-                        data-action="decidir-convite"
-                        data-invitation-id="${esc(convite.id)}"
-                        data-decision="recusar">
-                  Recusar
-                </button>
-              </div>
-            </article>
-          `;
-        }).join("")
-        :`<p class="empty">
-            Você não tem convites pendentes.
-          </p>`
-        }
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-action="decidir-convite"
+                    data-invitation-id="${esc(convite.id)}"
+                    data-decision="aceitar">
+                    Aceitar
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-danger"
+                    data-action="decidir-convite"
+                    data-invitation-id="${esc(convite.id)}"
+                    data-decision="recusar">
+                    Recusar
+                  </button>
+                </div>
+              </article>
+            `;
+          }).join("")
+          :`<p class="empty">
+              Você não tem convites pendentes.
+            </p>`
+      }
     </div>
   `);
 }
