@@ -4423,6 +4423,66 @@ document.addEventListener("click",async event=>{
     button
   );
 });
+document.addEventListener("click",async event=>{
+  const button=event.target.closest(
+    '[data-action="leave-project"],' +
+    '[data-action="remove-project-member"]'
+  );
+
+  if(!button || button.disabled)return;
+
+  const projectId=button.dataset.project;
+  const leaving=button.dataset.action==="leave-project";
+  const userId=leaving
+    ?state.user?.id
+    :button.dataset.user;
+
+  if(!projectId || !userId)return;
+
+  const name=leaving
+    ?""
+    :button.closest(".project-person")
+      ?.querySelector("strong")
+      ?.textContent?.trim()||"este participante";
+
+  const confirmed=window.confirm(
+    leaving
+      ?"Deseja sair deste projeto? Você deixará de ser colaborador e poderá pedir para participar novamente depois."
+      :`Deseja remover ${name} deste projeto? Essa pessoa deixará de ser colaboradora e poderá pedir para participar novamente depois.`
+  );
+
+  if(!confirmed)return;
+
+  button.disabled=true;
+
+  try{
+    const result=await supabaseClient.rpc(
+      "techna_sair_ou_remover_participante",
+      {
+        p_project_id:projectId,
+        p_user_id:userId
+      }
+    );
+
+    if(result.error){
+      showToast(authError(result.error));
+      return;
+    }
+
+    showToast(
+      leaving
+        ?"Você saiu do projeto."
+        :"Participante removido do projeto."
+    );
+
+    await openProject(projectId);
+  }catch(error){
+    console.error("Erro ao sair ou remover participante:",error);
+    showToast("Não foi possível concluir a ação.");
+  }finally{
+    button.disabled=false;
+  }
+});
 function showConfirmation({
   title,
   message,
