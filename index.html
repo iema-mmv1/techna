@@ -2023,6 +2023,29 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
   padding: 10px;
   color: var(--muted);
 }
+/* Mantém sino, Sair e perfil alinhados à direita */
+.techna-header .techna-header-actions {
+  justify-content: flex-end;
+}
+
+.techna-header .techna-quick-logout,
+.techna-header .techna-profile-menu {
+  flex: 0 0 auto;
+}
+
+/* Sino sem cartão branco */
+.techna-header .techna-header-actions
+  > .icon-btn[data-action="notifications"] {
+  color: #fff;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.techna-header .techna-header-actions
+  > .icon-btn[data-action="notifications"]:hover {
+  background: rgba(255, 255, 255, .12);
+}
 </style>
 </head>
 <body>
