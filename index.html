@@ -4590,6 +4590,8 @@ document.addEventListener("click",async event=>{
     );
 
     if(!alreadySelected){
+            const photo=personButton.dataset.photo||"";
+
       selected.insertAdjacentHTML("beforeend",`
         <span
           data-user="${esc(userId)}"
@@ -4597,6 +4599,15 @@ document.addEventListener("click",async event=>{
           style="display:inline-flex;align-items:center;gap:6px;
                  padding:5px 9px;border:1px solid currentColor;
                  border-radius:999px;">
+          ${
+            photo
+              ? `<img
+                   src="${esc(photo)}"
+                   alt=""
+                   style="width:26px;height:26px;border-radius:50%;
+                          object-fit:cover;flex-shrink:0;">`
+              : ""
+          }
           <span>${esc(name)}</span>
           <button
             type="button"
@@ -4831,7 +4842,8 @@ document.addEventListener("input",event=>{
               class="project-person"
               data-action="select-invite-person"
               data-user="${esc(person.id)}"
-              data-name="${esc(name)}">
+              data-name="${esc(name)}"
+data-photo="${esc(person.foto_url||"")}">
               <span class="project-person-avatar">
                 ${
                   person.foto_url
