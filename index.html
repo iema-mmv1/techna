@@ -2023,9 +2023,20 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
   padding: 10px;
   color: var(--muted);
 }
-/* Mantém sino, Sair e perfil alinhados à direita */
+/* Barra superior: ações alinhadas à direita */
 .techna-header .techna-header-actions {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
   justify-content: flex-end;
+  min-width: 0;
+  gap: 12px;
+}
+
+.techna-header .techna-search {
+  flex: 1 1 130px;
+  max-width: 540px;
+  min-width: 130px;
 }
 
 .techna-header .techna-quick-logout,
@@ -2033,18 +2044,43 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
   flex: 0 0 auto;
 }
 
-/* Sino sem cartão branco */
+.techna-header .techna-profile-menu {
+  margin-left: 0;
+}
+
+/* Sino: remove a caixa, inclusive ao passar o mouse */
 .techna-header .techna-header-actions
-  > .icon-btn[data-action="notifications"] {
+  > button.icon-btn[data-action="notifications"],
+.techna-header .techna-header-actions
+  > button.icon-btn[data-action="notifications"]:hover {
   color: #fff;
   border: 0;
   background: transparent;
   box-shadow: none;
 }
 
-.techna-header .techna-header-actions
-  > .icon-btn[data-action="notifications"]:hover {
-  background: rgba(255, 255, 255, .12);
+/* A busca continua com o formato de ícone no celular */
+@media (max-width: 620px) {
+  .techna-header .techna-header-actions {
+    flex: 0 0 auto;
+    gap: 5px;
+    margin-left: auto;
+  }
+
+  .techna-header .techna-search {
+    flex: 0 0 34px;
+    width: 34px;
+    min-width: 34px;
+  }
+
+  .techna-header .techna-search:focus-within {
+    position: absolute;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    z-index: 60;
+  }
 }
 </style>
 </head>
