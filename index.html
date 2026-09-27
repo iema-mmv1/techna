@@ -5243,7 +5243,147 @@ async function cancelProjectParticipation(projectId, button){
     button.disabled=false;
   }
 }
-function profileModal(){const p=state.profile||{},email=state.user?.email||"";openModal("Editar meu perfil",`<form id="profile-form"><div class="profile-avatar-editor">${avatar(p,true)}<div><strong>Imagem do perfil</strong><p class="muted">Escolha uma imagem para aparecer no seu perfil.</p><input class="input" type="file" name="foto" accept="image/*"><img id="profile-preview" class="cover-preview hidden" alt="Pré-visualização"></div></div><div class="form-grid"><div class="field span-2"><label>Nome completo</label><input class="input" name="nome" value="${esc(p.nome||"")}" required></div><div class="field"><label>Username</label><input class="input" name="username" value="${esc(p.username||"")}" required></div><div class="field"><label>E-mail</label><input class="input" value="${esc(email)}" disabled></div><div class="field"><label>Curso</label><select class="select" name="curso"><option value="">Escolha seu curso</option><option ${p.curso==="Marketing"?"selected":""}>Marketing</option><option ${p.curso==="Administração"?"selected":""}>Administração</option><option ${p.curso==="Informática"?"selected":""}>Informática</option></select></div><div class="field"><label>Nova senha</label><input class="input" type="password" name="password" minlength="6" placeholder="Deixe vazio para manter"></div><div class="field span-2"><label>Confirmação da nova senha</label><input class="input" type="password" name="password2" minlength="6" placeholder="Repita a nova senha"></div></div><p id="profile-message" class="message"></p><div class="profile-actions"><button type="submit" class="btn btn-primary">Salvar alterações</button><button type="button" class="btn btn-ghost" data-action="send-password-reset">Enviar link de redefinição</button></div></form>`);document.querySelector('[name="foto"]')?.addEventListener("change",e=>{const f=e.target.files?.[0],img=document.getElementById("profile-preview");if(f&&img){img.src=URL.createObjectURL(f);img.classList.remove("hidden")}})}
+function profileModal(){
+  const p=state.profile||{};
+  const email=state.user?.email||"";
+  const professor=p.tipo_usuario==="professor";
+
+  openModal("Editar meu perfil",`
+    <form id="profile-form">
+      <div class="profile-avatar-editor">
+        ${avatar(p,true)}
+        <div>
+          <strong>Imagem do perfil</strong>
+          <p class="muted">
+            Escolha uma imagem para aparecer no seu perfil.
+          </p>
+          <input class="input"
+                 type="file"
+                 name="foto"
+                 accept="image/*">
+          <img id="profile-preview"
+               class="cover-preview hidden"
+               alt="Pré-visualização">
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="field span-2">
+          <label>Nome completo</label>
+          <input class="input"
+                 name="nome"
+                 value="${esc(p.nome||"")}"
+                 required>
+        </div>
+
+        <div class="field">
+          <label>Username</label>
+          <input class="input"
+                 name="username"
+                 value="${esc(p.username||"")}"
+                 required>
+        </div>
+
+        <div class="field">
+          <label>E-mail</label>
+          <input class="input"
+                 value="${esc(email)}"
+                 disabled>
+        </div>
+
+        ${
+          professor
+            ?`
+              <div class="field span-2">
+                <label>Instituição</label>
+                <input class="input"
+                       name="instituicao"
+                       maxlength="150"
+                       value="${esc(p.instituicao||"")}"
+                       placeholder="Onde você atua">
+              </div>
+
+              <div class="field span-2">
+                <label>Áreas de familiaridade</label>
+                <input class="input"
+                       name="areas_atuacao"
+                       maxlength="500"
+                       value="${esc(p.areas_atuacao||"")}"
+                       placeholder="Ex.: Desenvolvimento web, Redes">
+              </div>
+
+              <div class="field span-2">
+                <label>Biografia</label>
+                <textarea class="textarea"
+                          name="biografia"
+                          maxlength="2000"
+                          placeholder="Conte um pouco sobre sua trajetória e interesses">${esc(p.biografia||"")}</textarea>
+              </div>
+            `
+            :`
+              <div class="field">
+                <label>Curso</label>
+                <select class="select" name="curso">
+                  <option value="">Escolha seu curso</option>
+                  <option ${p.curso==="Marketing"?"selected":""}>
+                    Marketing
+                  </option>
+                  <option ${p.curso==="Administração"?"selected":""}>
+                    Administração
+                  </option>
+                  <option ${p.curso==="Informática"?"selected":""}>
+                    Informática
+                  </option>
+                </select>
+              </div>
+            `
+        }
+
+        <div class="field">
+          <label>Nova senha</label>
+          <input class="input"
+                 type="password"
+                 name="password"
+                 minlength="6"
+                 placeholder="Deixe vazio para manter">
+        </div>
+
+        <div class="field span-2">
+          <label>Confirmação da nova senha</label>
+          <input class="input"
+                 type="password"
+                 name="password2"
+                 minlength="6"
+                 placeholder="Repita a nova senha">
+        </div>
+      </div>
+
+      <p id="profile-message" class="message"></p>
+
+      <div class="profile-actions">
+        <button type="submit" class="btn btn-primary">
+          Salvar alterações
+        </button>
+        <button type="button"
+                class="btn btn-ghost"
+                data-action="send-password-reset">
+          Enviar link de redefinição
+        </button>
+      </div>
+    </form>
+  `);
+
+  document.querySelector('[name="foto"]')
+    ?.addEventListener("change",event=>{
+      const file=event.target.files?.[0];
+      const preview=document.getElementById("profile-preview");
+
+      if(file && preview){
+        preview.src=URL.createObjectURL(file);
+        preview.classList.remove("hidden");
+      }
+    });
+}
 let newProjectAlbum=[];
 
 function projectModal(){
@@ -5637,7 +5777,70 @@ async function createProject(e){
     button.disabled=false;
   }
 }
-async function createUpdate(e){e.preventDefault();const f=e.target,id=f.dataset.project;const r=await supabaseClient.from("project_updates").insert({project_id:id,author_id:state.user.id,titulo:f.elements.titulo.value.trim(),descricao:f.elements.descricao.value.trim()});if(r.error){showToast(authError(r));return}closeModal();showToast("Atualização publicada como notícia.");await goPage("news")}async function saveProfile(e){e.preventDefault();const f=e.target,m=document.getElementById("profile-message"),button=f.querySelector('button[type="submit"]');if(f.elements.password.value&&f.elements.password.value!==f.elements.password2.value){m.textContent="As senhas não conferem.";return}button.disabled=true;try{const foto_url=await uploadProfilePhoto(f.elements.foto.files?.[0]);const r=await supabaseClient.from("profiles").update({nome:f.elements.nome.value.trim(),username:f.elements.username.value.trim().toLowerCase(),curso:f.elements.curso.value||null,foto_url}).eq("id",state.user.id);if(r.error)throw r.error;if(f.elements.password.value){const p=await supabaseClient.auth.updateUser({password:f.elements.password.value});if(p.error)throw p.error}await loadProfile(state.user);closeModal();renderApp();showToast("Perfil atualizado com sucesso.")}catch(x){m.textContent=authError(x)}finally{button.disabled=false}}async function sendPasswordReset(){const r=await supabaseClient.auth.resetPasswordForEmail(state.user.email,{redirectTo:APP_URL});if(r.error)showToast(authError(r));else showToast("Link de redefinição enviado para seu e-mail.")}
+async function createUpdate(e){e.preventDefault();const f=e.target,id=f.dataset.project;const r=await supabaseClient.from("project_updates").insert({project_id:id,author_id:state.user.id,titulo:f.elements.titulo.value.trim(),descricao:f.elements.descricao.value.trim()});if(r.error){showToast(authError(r));return}closeModal();showToast("Atualização publicada como notícia.");await goPage("news")}
+async function saveProfile(e){
+  e.preventDefault();
+
+  const form=e.target;
+  const message=document.getElementById("profile-message");
+  const button=form.querySelector('button[type="submit"]');
+  const password=form.elements.password.value;
+
+  if(password && password!==form.elements.password2.value){
+    message.textContent="As senhas não conferem.";
+    return;
+  }
+
+  button.disabled=true;
+
+  try{
+    const foto_url=await uploadProfilePhoto(
+      form.elements.foto.files?.[0]
+    );
+
+    const changes={
+      nome:form.elements.nome.value.trim(),
+      username:form.elements.username.value.trim().toLowerCase(),
+      foto_url
+    };
+
+    if(state.profile?.tipo_usuario==="professor"){
+      changes.instituicao=
+        form.elements.instituicao.value.trim()||null;
+      changes.areas_atuacao=
+        form.elements.areas_atuacao.value.trim()||null;
+      changes.biografia=
+        form.elements.biografia.value.trim()||null;
+    }else{
+      changes.curso=form.elements.curso.value||null;
+    }
+
+    const result=await supabaseClient
+      .from("profiles")
+      .update(changes)
+      .eq("id",state.user.id);
+
+    if(result.error)throw result.error;
+
+    if(password){
+      const passwordResult=await supabaseClient.auth
+        .updateUser({password});
+
+      if(passwordResult.error)throw passwordResult.error;
+    }
+
+    await loadProfile(state.user);
+    closeModal();
+    renderApp();
+    showToast("Perfil atualizado com sucesso.");
+  }catch(error){
+    console.error("Erro ao salvar perfil:",error);
+    message.textContent=authError(error);
+  }finally{
+    button.disabled=false;
+  }
+}
+async function sendPasswordReset(){const r=await supabaseClient.auth.resetPasswordForEmail(state.user.email,{redirectTo:APP_URL});if(r.error)showToast(authError(r));else showToast("Link de redefinição enviado para seu e-mail.")}
 document.addEventListener("submit",e=>{
   if(e.target.id==="login-form")login(e);
   if(e.target.id==="account-form")register(e);
@@ -7583,7 +7786,7 @@ document.addEventListener("click",async event=>{
   try{
     const result=await supabaseClient
       .from("profiles")
-      .select("id,nome,foto_url,instituicao,biografia")
+      .select("id,nome,foto_url,instituicao,biografia,areas_atuacao")
       .eq("id",teacherId)
       .eq("tipo_usuario","professor")
       .eq("status","publicado")
@@ -7615,7 +7818,13 @@ document.addEventListener("click",async event=>{
           </p>
         </div>
       </div>
-
+<section class="project-section">
+  <h3>Áreas de preferência</h3>
+  <p>${esc(
+    professor.areas_atuacao||
+    "Áreas ainda não informadas."
+  )}</p>
+</section>
       <section class="project-section">
         <h3>Sobre o professor</h3>
         <p>${esc(
