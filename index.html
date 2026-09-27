@@ -1874,6 +1874,35 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
   -webkit-box-orient:vertical;
   -webkit-line-clamp:2;
 }
+.participation-card-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  align-items:start;
+}
+
+.participation-card-grid>.participation-request{
+  min-width:0;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+}
+
+.participation-card-grid .participation-project-preview{
+  display:block;
+}
+
+.participation-card-grid .participation-project-cover{
+  width:100%;
+  height:173px;
+  margin-bottom:10px;
+}
+
+@media(max-width:700px){
+  .participation-card-grid{
+    grid-template-columns:1fr;
+  }
+}
 </style>
 </head>
 <body>
@@ -5367,7 +5396,7 @@ async function abrirPedidosDoDashboard(){
   if(!meusProjetos.length){
     openModal(
       "Pedidos de participação",
-      `<div data-dashboard-pedidos>
+      `<div class="participation-card-grid" data-dashboard-pedidos>
          <p class="empty">
            Você ainda não tem projetos com pedidos de participação.
          </p>
@@ -5438,7 +5467,7 @@ async function abrirPedidosDoDashboard(){
   );
 
   openModal("Pedidos de participação",`
-    <div data-dashboard-pedidos>
+    <div class="participation-card-grid" data-dashboard-pedidos>
       ${
         pedidos.length
           ?pedidos.map(pedido=>{
@@ -5591,59 +5620,59 @@ async function abrirColaboradoresDoDashboard(){
   });
 
   openModal("Colaboram comigo",`
-    ${
-      colaboradores.length
-        ?colaboradores.map(membro=>{
-          const projeto=projetosPorId.get(
-            String(membro.project_id)
-          );
-          const perfil=perfisPorId.get(
-            String(membro.user_id)
-          );
-          const nome=perfil?.nome||
-                     perfil?.username||
-                     "Usuário";
+    <div class="participation-card-grid">
+      ${
+        colaboradores.length
+          ?colaboradores.map(membro=>{
+            const projeto=projetosPorId.get(
+              String(membro.project_id)
+            );
+            const perfil=perfisPorId.get(
+              String(membro.user_id)
+            );
+            const nome=perfil?.nome||
+                       perfil?.username||
+                       "Usuário";
 
-          return `
-            <article class="participation-request">
-              <span class="project-person-avatar">
-                ${
-                  perfil?.foto_url
-                    ?`<img src="${esc(perfil.foto_url)}"
-                            alt="Foto de ${esc(nome)}">`
-                    :esc(initials(nome))
-                }
-              </span>
+            return `
+              <article class="participation-request">
+                <span class="project-person-avatar">
+                  ${
+                    perfil?.foto_url
+                      ?`<img src="${esc(perfil.foto_url)}"
+                              alt="Foto de ${esc(nome)}">`
+                      :esc(initials(nome))
+                  }
+                </span>
 
-              <div class="participation-request-info">
-                <strong>${esc(nome)}</strong>
-                ${resumoProjetoParticipacao(projeto)}
-                ${
-                  membro.funcao
-                    ?`<small>${esc(membro.funcao)}</small>`
-                    :""
-                }
-              </div>
+                <div class="participation-request-info">
+                  <strong>${esc(nome)}</strong>
+                  ${resumoProjetoParticipacao(projeto)}
+                  ${
+                    membro.funcao
+                      ?`<small>${esc(membro.funcao)}</small>`
+                      :""
+                  }
+                </div>
 
-              <div class="participation-request-actions">
-                <button type="button"
-                        class="btn btn-secondary"
-                        data-action="abrir-projeto-colaborador"
-                        data-project="${esc(projeto.id)}">
-                  Abrir projeto
-                </button>
-              </div>
-            </article>
-          `;
-        }).join("")
-        :`<p class="empty">
-            Ninguém está colaborando nos seus projetos ainda.
-          </p>`
-    }
+                <div class="participation-request-actions">
+                  <button type="button"
+                          class="btn btn-secondary"
+                          data-action="abrir-projeto-colaborador"
+                          data-project="${esc(projeto.id)}">
+                    Abrir projeto
+                  </button>
+                </div>
+              </article>
+            `;
+          }).join("")
+          :`<p class="empty">
+              Ninguém está colaborando nos seus projetos ainda.
+            </p>`
+      }
+    </div>
   `);
 }
-  
-document.addEventListener("click",async e=>{
 async function abrirConvitesDoDashboard(){
   if(!state.user)return;
 
@@ -5700,11 +5729,13 @@ async function abrirConvitesDoDashboard(){
   );
 
   openModal("Convites recebidos",`
+    <div class="participation-card-grid">
     ${
       convites.length
         ?convites.map(convite=>{
           const projeto=projetosPorId.get(
             String(convite.project_id)
+          </div>
           );
           const perfil=perfisPorId.get(
             String(convite.invited_by)
