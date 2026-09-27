@@ -2518,7 +2518,8 @@ const progressoMedio=meusProjetos.length
       label:"Meus projetos",
       icon:"projects",
       value:meusProjetos.length,
-      max:20
+      max:20,
+      action:"dashboard-meus-projetos"
     },
     {
       label:"Projetos concluídos",
@@ -2526,7 +2527,8 @@ const progressoMedio=meusProjetos.length
       value:meusProjetos.filter(
         project=>project.status==="concluido"
       ).length,
-      max:50
+      max:50,
+      action:"dashboard-projetos-concluidos"
     },
     {
       label:"Em acompanhamento",
@@ -2635,7 +2637,42 @@ const progressoMedio=meusProjetos.length
 
   initCarousel();
 }
-async function projectsPage(){frame(`<section class="card"><div class="card-head"><h2>Projetos</h2><button class="btn btn-primary" data-action="new-project">Novo projeto</button></div><div class="project-grid">${dataProjects().map(projectCard).join("")}</div></section>`)}async function newsPage(){const activities=state.projects.length?await getActivities():[],feed=activities.length?activities:demoNews;frame(`<section class="card"><div class="card-head"><h2>Notícias</h2><p>Projetos novos e atualizações da comunidade.</p></div><div class="horizontal">${feed.map(n=>n.project_id?activityCard(n):newsCard(n)).join("")}</div></section>`)}function profilePage(){const p=state.profile||{};frame(`<section class="card"><div class="profile-head">${avatar(p,true)}<div><h2>${esc(p.nome||"Usuário")}</h2><p class="muted">${esc(p.username||"usuário")} · ${esc(p.curso||"Sem curso")}</p><button class="btn btn-primary" data-action="edit-profile">Editar meu perfil</button></div></div></section>`)}function simplePage(){frame(`<section class="card"><h2>${titleData()[0]}</h2><div class="empty">Esta área está pronta para receber os dados do Supabase.</div></section>`)}
+async function projectsPage(){
+  const meus=state.page==="my-projects";
+  const concluidos=state.page==="completed-projects";
+
+  const projetos=meus||concluidos
+    ?state.projects.filter(project=>
+        String(project.autora_id)===String(state.user.id) &&
+        (!concluidos || project.status==="concluido")
+      )
+    :dataProjects();
+
+  const titulo=concluidos
+    ?"Projetos concluídos"
+    :meus
+      ?"Meus projetos"
+      :"Projetos";
+
+  frame(`
+    <section class="card">
+      <div class="card-head">
+        <h2>${titulo}</h2>
+        <button class="btn btn-primary" data-action="new-project">
+          Novo projeto
+        </button>
+      </div>
+      ${
+        projetos.length
+          ?`<div class="project-grid">
+              ${projetos.map(project=>projectCard(project,meus||concluidos)).join("")}
+            </div>`
+          :`<p class="empty">Nenhum projeto encontrado.</p>`
+      }
+    </section>
+  `);
+}
+async function newsPage(){const activities=state.projects.length?await getActivities():[],feed=activities.length?activities:demoNews;frame(`<section class="card"><div class="card-head"><h2>Notícias</h2><p>Projetos novos e atualizações da comunidade.</p></div><div class="horizontal">${feed.map(n=>n.project_id?activityCard(n):newsCard(n)).join("")}</div></section>`)}function profilePage(){const p=state.profile||{};frame(`<section class="card"><div class="profile-head">${avatar(p,true)}<div><h2>${esc(p.nome||"Usuário")}</h2><p class="muted">${esc(p.username||"usuário")} · ${esc(p.curso||"Sem curso")}</p><button class="btn btn-primary" data-action="edit-profile">Editar meu perfil</button></div></div></section>`)}function simplePage(){frame(`<section class="card"><h2>${titleData()[0]}</h2><div class="empty">Esta área está pronta para receber os dados do Supabase.</div></section>`)}
 function aboutPage() {
   frame(`
     <article class="card techna-info-page">
@@ -3099,6 +3136,8 @@ async function goPage(page) {
   const pages = {
     dashboard,
     projects: projectsPage,
+    "my-projects": projectsPage,
+"completed-projects": projectsPage,
     news: newsPage,
     profile: profilePage,
     favorites: simplePage,
@@ -5744,7 +5783,15 @@ async function abrirConvitesDoDashboard(){
 
   if(a){
     const n=a.dataset.action;
+    if(n==="dashboard-meus-projetos"){
+  await goPage("my-projects");
+  return;
+}
 
+if(n==="dashboard-projetos-concluidos"){
+  await goPage("completed-projects");
+  return;
+}
     if(n==="dashboard-acompanhamentos" ||
        n==="participating-projects"){
       const result=await supabaseClient
