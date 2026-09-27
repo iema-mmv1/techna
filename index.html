@@ -2094,45 +2094,6 @@ function projectCard(p, showActions = false) {
     </article>
   `;
 }
-function mostrarSugestoesDeProjetos(valor){
-  const resultados=document.getElementById(
-    "techna-search-results"
-  );
-
-  if(!resultados)return;
-
-  const termo=valor.trim().toLocaleLowerCase();
-
-  if(!termo){
-    resultados.innerHTML="";
-    resultados.hidden=true;
-    return;
-  }
-
-  const projetos=(state.projects||[])
-    .filter(projeto=>
-      String(projeto.titulo||"")
-        .toLocaleLowerCase()
-        .includes(termo)
-    )
-    .slice(0,8);
-
-  resultados.innerHTML=projetos.length
-    ?projetos.map(projeto=>`
-        <button
-          type="button"
-          class="techna-search-result"
-          data-action="search-open-project"
-          data-project="${esc(projeto.id)}">
-          ${esc(projeto.titulo)}
-        </button>
-      `).join("")
-    :`<div class="techna-search-empty">
-        Nenhum projeto encontrado.
-      </div>`;
-
-  resultados.hidden=false;
-}
 
 document.addEventListener("input",e=>{
   if(e.target.id==="techna-search"){
