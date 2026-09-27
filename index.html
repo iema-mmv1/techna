@@ -1694,14 +1694,46 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
   from{transform:translateX(105%)}
   to{transform:translateX(0)}
 }
-/* Indicadores na borda externa dos cartões */
+/* Indicadores: ícone ao lado, número no cartão, nome abaixo */
 .stats .stat{
-  position:relative;
   display:flex;
   flex-direction:column;
-  justify-content:space-between;
-  overflow:hidden;
-  border-color:transparent;
+  align-items:stretch;
+  justify-content:flex-start;
+  aspect-ratio:auto;
+  min-height:0;
+  padding:0;
+  overflow:visible;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  text-align:center;
+}
+
+.stats .stat-top{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  width:100%;
+}
+
+.stats .stat-big-icon{
+  display:block;
+  flex:0 0 38%;
+  width:38%;
+  height:auto;
+  color:var(--p);
+}
+
+.stats .stat-number{
+  position:relative;
+  display:grid;
+  flex:0 0 57%;
+  width:57%;
+  aspect-ratio:1;
+  place-items:center;
+  background:#fff;
 }
 
 .stats .stat-border{
@@ -1723,43 +1755,60 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
   stroke-width:2;
 }
 
-.stats .stat-content{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:9px;
-  width:100%;
-  margin-top:7px;
-}
-
-.stats .stat-icon{
+.stats .stat-number b{
+  position:relative;
+  z-index:1;
+  display:block;
+  margin:0;
   color:var(--p);
-  font-size:1.45rem;
-  font-weight:800;
+  font-size:1.35rem;
   line-height:1;
 }
 
-.stats .stat-content b{
-  margin:0;
-  font-size:1.6rem;
+.stats .stat small{
+  display:block;
+  width:100%;
+  margin-top:9px;
+  color:var(--ink);
+  font-size:.76rem;
+  font-weight:700;
+  line-height:1.25;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+
+.stats button.stat:hover{
+  background:transparent;
+}
+
+.stats button.stat:hover .stat-number{
+  background:#faf5fb;
+}
+
+.stats button.stat:focus-visible{
+  outline:2px solid var(--lime);
+  outline-offset:4px;
 }
 
 @media(max-width:560px){
   .stats .stat{
     aspect-ratio:auto;
-    min-height:88px;
+    min-height:0;
+    padding:0;
   }
 
-  .stats .stat-content{
-    gap:4px;
+  .stats .stat-top{
+    gap:2px;
   }
 
-  .stats .stat-icon{
+  .stats .stat-number b{
     font-size:1rem;
   }
 
-  .stats .stat-content b{
-    font-size:1.15rem;
+  .stats .stat small{
+    margin-top:6px;
+    font-size:.62rem;
+    line-height:1.15;
   }
 }
 </style>
