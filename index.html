@@ -1716,12 +1716,11 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
 
 .stats .stat-border-base{
   stroke:#e9e1eb;
-  stroke-width:2.5;
+  stroke-width:1.5;
 }
 
 .stats .stat-border-fill{
-  stroke:var(--p);
-  stroke-width:3.5;
+  stroke-width:2;
 }
 
 .stats .stat-content{
@@ -2353,49 +2352,39 @@ async function dashboard(){
     :[];
     const feed=activities.length?activities:demoNews;
 
+    let statBorderId=0;
+
   const statBorder=(value,max,continuous=false)=>{
     const amount=Math.max(0,Number(value)||0);
-    const limit=Math.min(max,amount);
-
-    const base=`
-      <rect x="2" y="2" width="96" height="96" rx="13"
-            pathLength="${max}"
-            class="stat-border-base"
-            stroke-dasharray="${
-              continuous?`${max} 0`:`.72 .28`
-            }" />
-    `;
-
-    const fill=continuous
-      ?`
-        <rect x="2" y="2" width="96" height="96" rx="13"
-              pathLength="${max}"
-              class="stat-border-fill"
-              stroke-dasharray="${limit} ${max-limit}"
-              stroke-dashoffset="0" />
-      `
-      :Array.from(
-        {length:Math.min(max,Math.floor(amount))},
-        (_,index)=>`
-          <rect x="2" y="2" width="96" height="96" rx="13"
-                pathLength="${max}"
-                class="stat-border-fill"
-                stroke-dasharray=".72 ${max-.72}"
-                stroke-dashoffset="${-index}" />
-        `
-      ).join("");
+    const filled=Math.min(max,amount);
+    const gradientId=`stat-border-gradient-${++statBorderId}`;
 
     return `
       <svg class="stat-border"
            viewBox="0 0 100 100"
            preserveAspectRatio="none"
            aria-hidden="true">
-        ${base}${fill}
+        <defs>
+          <linearGradient id="${gradientId}"
+                          x1="0%" y1="0%"
+                          x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#4d1263" />
+            <stop offset="100%" stop-color="#a8d719" />
+          </linearGradient>
+        </defs>
+
+        <rect x="2" y="2" width="96" height="96" rx="13"
+              pathLength="${max}"
+              class="stat-border-base" />
+
+        <rect x="2" y="2" width="96" height="96" rx="13"
+              pathLength="${max}"
+              class="stat-border-fill"
+              stroke="url(#${gradientId})"
+              stroke-dasharray="${filled} ${max-filled}" />
       </svg>
     `;
   };
-
-  frame(`
     <div class="stats">
       <article class="stat">
         ${statBorder(meusProjetos.length,20)}
