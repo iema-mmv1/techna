@@ -1943,6 +1943,86 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
 ) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+/* Lista flutuante da pesquisa; não altera o tamanho do header */
+.techna-search-results {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(49, 16, 71, .2);
+}
+
+.techna-search-results[hidden] {
+  display: none;
+}
+
+.techna-search-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.techna-search-result:hover,
+.techna-search-result:focus-visible {
+  background: #f7f1f9;
+}
+
+.techna-search-result-cover {
+  display: grid;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 7px;
+  color: #fff;
+  background: var(--p);
+}
+
+.techna-search-result-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.techna-search-result-text {
+  display: block;
+  min-width: 0;
+}
+
+.techna-search-result-text strong,
+.techna-search-result-text small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.techna-search-result-text small {
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.techna-search-empty {
+  margin: 0;
+  padding: 10px;
+  color: var(--muted);
+}
 </style>
 </head>
 <body>
@@ -2094,7 +2174,111 @@ function projectCard(p, showActions = false) {
     </article>
   `;
 }
+function posicionarSugestoesDeProjetos(){
+  const campo=document.getElementById("techna-search");
+  const lista=document.getElementById("techna-search-results");
 
+  if(!campo || !lista || lista.hidden)return;
+
+  const posicao=campo.getBoundingClientRect();
+  const margem=12;
+  const largura=Math.min(
+    Math.max(posicao.width,280),
+    window.innerWidth-margem*2
+  );
+
+  lista.style.width=`${largura}px`;
+  lista.style.left=`${Math.max(
+    margem,
+    Math.min(
+      posicao.left,
+      window.innerWidth-largura-margem
+    )
+  )}px`;
+  lista.style.top=`${posicao.bottom+6}px`;
+  lista.style.maxHeight=`${Math.max(
+    100,
+    window.innerHeight-posicao.bottom-18
+  )}px`;
+}
+
+function mostrarSugestoesDeProjetos(valor){
+  const lista=document.getElementById("techna-search-results");
+  if(!lista)return;
+
+  const termo=valor.trim().toLocaleLowerCase();
+
+  if(!termo){
+    lista.innerHTML="";
+    lista.hidden=true;
+    return;
+  }
+
+  const projetos=(state.projects||[])
+    .filter(projeto=>
+      String(projeto.titulo||"")
+        .toLocaleLowerCase()
+        .startsWith(termo)
+    )
+    .slice(0,8);
+
+  lista.innerHTML=projetos.length
+    ?projetos.map(projeto=>`
+        <button
+          type="button"
+          class="techna-search-result"
+          data-action="search-open-project"
+          data-project="${esc(projeto.id)}">
+
+          <span class="techna-search-result-cover">
+            ${
+              projeto.imagem_capa_url
+                ?`<img
+                    src="${esc(projeto.imagem_capa_url)}"
+                    alt="">`
+                :"⌕"
+            }
+          </span>
+
+          <span class="techna-search-result-text">
+            <strong>${esc(projeto.titulo)}</strong>
+            <small>${esc(
+              String(projeto.descricao||"").slice(0,90)
+            )}</small>
+          </span>
+        </button>
+      `).join("")
+    :`<p class="techna-search-empty">
+        Nenhum projeto encontrado.
+      </p>`;
+
+  lista.hidden=false;
+  posicionarSugestoesDeProjetos();
+}
+
+document.addEventListener("input",e=>{
+  if(e.target.id==="techna-search"){
+    mostrarSugestoesDeProjetos(e.target.value);
+  }
+});
+
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Escape")return;
+
+  const lista=document.getElementById("techna-search-results");
+  if(lista)lista.hidden=true;
+});
+
+document.addEventListener("click",e=>{
+  if(e.target.closest(".techna-search"))return;
+  if(e.target.closest("#techna-search-results"))return;
+
+  const lista=document.getElementById("techna-search-results");
+  if(lista)lista.hidden=true;
+});
+
+window.addEventListener("resize",posicionarSugestoesDeProjetos);
+window.addEventListener("scroll",posicionarSugestoesDeProjetos,true);
 document.addEventListener("input",e=>{
   if(e.target.id==="techna-search"){
     mostrarSugestoesDeProjetos(e.target.value);
@@ -3328,7 +3512,12 @@ function renderApp(){
          id="techna-search"
          aria-label="Pesquisar"
          placeholder="Pesquisar projetos ou notícias">
-</label>
+          </label>
+
+          <div id="techna-search-results"
+               class="techna-search-results"
+               aria-label="Sugestões de projetos"
+               hidden></div>
 
           <button type="button"
                   class="icon-btn"
@@ -6467,6 +6656,19 @@ if(n==="dashboard-projetos-concluidos"){
   if(resultados){
     resultados.innerHTML="";
     resultados.hidden=true;
+  }
+
+  await openProject(a.dataset.project);
+  return;
+}
+    if(n==="search-open-project"){
+  const campo=document.getElementById("techna-search");
+  const lista=document.getElementById("techna-search-results");
+
+  if(campo)campo.value="";
+  if(lista){
+    lista.innerHTML="";
+    lista.hidden=true;
   }
 
   await openProject(a.dataset.project);
