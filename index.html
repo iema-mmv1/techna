@@ -4490,6 +4490,287 @@ document.addEventListener("click",async event=>{
     button.disabled=false;
   }
 });
+let inviteSearchTimer;
+let inviteSearchVersion=0;
+
+document.addEventListener("click",async event=>{
+  const openButton=event.target.closest(
+    '[data-action="invite-project-member"]'
+  );
+
+  if(openButton){
+    const projectId=openButton.dataset.project;
+    const project=state.projects.find(
+      p=>String(p.id)===String(projectId)
+    );
+
+    if(
+      !state.user ||
+      !project ||
+      String(project.autora_id)!==String(state.user.id)
+    )return;
+
+    openModal("Convidar pessoa",`
+      <div class="project-section"
+           id="invite-project-panel"
+           data-project="${esc(projectId)}">
+        <p class="muted">
+          Pesquise pelo início do nome e selecione uma pessoa
+          para convidá-la ao projeto.
+        </p>
+
+        <div class="field">
+          <label for="invite-person-search">
+            Nome da pessoa
+          </label>
+          <input
+            id="invite-person-search"
+            class="input"
+            type="search"
+            autocomplete="off"
+            placeholder="Digite pelo menos 2 letras">
+        </div>
+
+        <div id="invite-person-results"
+             aria-live="polite"></div>
+
+        <div id="invite-person-selected"></div>
+
+        <div class="project-actions">
+          <button
+            class="btn btn-ghost"
+            type="button"
+            data-action="invite-back-project">
+            Voltar ao projeto
+          </button>
+
+          <button
+            class="btn btn-primary"
+            type="button"
+            data-action="send-project-invite"
+            disabled>
+            Enviar convite
+          </button>
+        </div>
+      </div>
+    `);
+
+    return;
+  }
+
+  const backButton=event.target.closest(
+    '[data-action="invite-back-project"]'
+  );
+
+  if(backButton){
+    const panel=backButton.closest("#invite-project-panel");
+    if(panel)await openProject(panel.dataset.project);
+    return;
+  }
+
+  const personButton=event.target.closest(
+    '[data-action="select-invite-person"]'
+  );
+
+  if(personButton){
+    const panel=personButton.closest("#invite-project-panel");
+    if(!panel)return;
+
+    panel.dataset.selectedUser=personButton.dataset.user;
+    panel.dataset.selectedName=personButton.dataset.name;
+
+    panel.querySelector("#invite-person-selected").innerHTML=`
+      <p>
+        Pessoa selecionada:
+        <strong>${esc(personButton.dataset.name)}</strong>
+      </p>
+    `;
+
+    panel.querySelector(
+      '[data-action="send-project-invite"]'
+    ).disabled=false;
+
+    return;
+  }
+
+  const sendButton=event.target.closest(
+    '[data-action="send-project-invite"]'
+  );
+
+  if(!sendButton || sendButton.disabled)return;
+
+  const panel=sendButton.closest("#invite-project-panel");
+  if(!panel)return;
+
+  const projectId=panel.dataset.project;
+  const invitedUserId=panel.dataset.selectedUser;
+  const invitedName=panel.dataset.selectedName;
+  const project=state.projects.find(
+    p=>String(p.id)===String(projectId)
+  );
+
+  if(
+    !state.user ||
+    !project ||
+    String(project.autora_id)!==String(state.user.id) ||
+    !invitedUserId ||
+    !invitedName
+  )return;
+
+  if(!window.confirm(
+    `Enviar convite para ${invitedName} participar deste projeto?`
+  ))return;
+
+  sendButton.disabled=true;
+
+  try{
+    const {error}=await supabaseClient
+      .from("project_invitations")
+      .insert({
+        project_id:projectId,
+        invited_user_id:invitedUserId,
+        invited_by:state.user.id,
+        invitation_type:"participante",
+        status:"pendente"
+      });
+
+    if(error){
+      console.error("Erro ao enviar convite:",error);
+
+      showToast(
+        error.code==="23505"
+          ?"Já existe um convite desse tipo para essa pessoa neste projeto."
+          :authError(error)
+      );
+
+      return;
+    }
+
+    showToast("Convite enviado.");
+    await openProject(projectId);
+  }catch(error){
+    console.error("Erro ao enviar convite:",error);
+    showToast("Não foi possível enviar o convite.");
+  }finally{
+    sendButton.disabled=false;
+  }
+});
+
+document.addEventListener("input",event=>{
+  const input=event.target;
+
+  if(input.id!=="invite-person-search")return;
+
+  const panel=input.closest("#invite-project-panel");
+  if(!panel)return;
+
+  const results=panel.querySelector(
+    "#invite-person-results"
+  );
+  const sendButton=panel.querySelector(
+    '[data-action="send-project-invite"]'
+  );
+
+  panel.dataset.selectedUser="";
+  panel.dataset.selectedName="";
+  panel.querySelector(
+    "#invite-person-selected"
+  ).innerHTML="";
+  sendButton.disabled=true;
+
+  clearTimeout(inviteSearchTimer);
+  const version=++inviteSearchVersion;
+
+  const query=input.value
+    .trim()
+    .replace(/[%_\\]/g,"")
+    .slice(0,60);
+
+  if(query.length<2){
+    results.innerHTML=`
+      <p class="muted">Digite pelo menos 2 letras.</p>
+    `;
+    return;
+  }
+
+  results.innerHTML=`
+    <p class="muted">Pesquisando...</p>
+  `;
+
+  inviteSearchTimer=setTimeout(async()=>{
+    try{
+      const {data,error}=await supabaseClient
+        .from("profiles")
+        .select("id,nome,username,foto_url")
+        .ilike("nome",`${query}%`)
+        .neq("id",state.user.id)
+        .order("nome",{ascending:true})
+        .limit(8);
+
+      if(
+        version!==inviteSearchVersion ||
+        !input.isConnected
+      )return;
+
+      if(error){
+        console.error("Erro ao pesquisar pessoas:",error);
+        results.innerHTML=`
+          <p class="muted">
+            Não foi possível pesquisar pessoas.
+          </p>
+        `;
+        return;
+      }
+
+      results.innerHTML=(data||[]).length
+        ?data.map(person=>{
+          const name=person.nome||
+                     person.username||
+                     "Usuário";
+
+          return `
+            <button
+              type="button"
+              class="project-person"
+              data-action="select-invite-person"
+              data-user="${esc(person.id)}"
+              data-name="${esc(name)}">
+              <span class="project-person-avatar">
+                ${
+                  person.foto_url
+                    ? `<img
+                         src="${esc(person.foto_url)}"
+                         alt="Foto de ${esc(name)}">`
+                    : esc(initials(name))
+                }
+              </span>
+              <span>
+                <strong>${esc(name)}</strong>
+                <small>
+                  ${esc(person.username||"")}
+                </small>
+              </span>
+            </button>
+          `;
+        }).join("")
+        :`<p class="muted">
+            Nenhuma pessoa encontrada.
+          </p>`;
+    }catch(error){
+      if(
+        version!==inviteSearchVersion ||
+        !input.isConnected
+      )return;
+
+      console.error("Erro ao pesquisar pessoas:",error);
+      results.innerHTML=`
+        <p class="muted">
+          Não foi possível pesquisar pessoas.
+        </p>
+      `;
+    }
+  },300);
+});
 function showConfirmation({
   title,
   message,
