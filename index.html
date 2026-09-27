@@ -1819,6 +1819,16 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
     line-height:1.15;
   }
 }
+/* Dois projetos recentes visíveis por vez no celular */
+@media(max-width:620px){
+  .recent-projects .horizontal{
+    grid-auto-columns:calc((100% - 12px)/2);
+  }
+
+  .recent-projects .project-card{
+    min-width:0;
+  }
+}
 </style>
 </head>
 <body>
@@ -2588,7 +2598,7 @@ const progressoMedio=meusProjetos.length
         ${renderNewsCarousel(feed.slice(0,8))}
       </section>
 
-      <section class="card wide">
+      <section class="card wide recent-projects">
         <div class="card-head">
           <h2>Projetos recentes</h2>
           <button class="btn btn-ghost" data-page="projects">
