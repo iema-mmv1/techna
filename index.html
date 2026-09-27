@@ -4195,6 +4195,7 @@ async function projectEditModal(project){
                           perfil?.foto_url
                             ?`<img
                                 src="${esc(perfil.foto_url)}"
+                                title="${esc(perfil?.username||nome)}"
                                 alt="${esc(nome)}"
                                 style="width:100%;height:100%;
                                        object-fit:cover;">`
