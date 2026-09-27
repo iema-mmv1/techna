@@ -5992,18 +5992,12 @@ async function abrirColaboradoresDoDashboard(){
             return `
               <article class="participation-request">
                 <div class="participation-request-info">
-                  <p>
-                    Estão colaborando com você neste projeto:
-                  </p>
-
-                  ${resumoProjetoParticipacao(projeto)}
-
                   <div
                     style="display:flex;
                            flex-wrap:wrap;
                            gap:12px;
                            align-items:center;
-                           margin-top:12px;">
+                           margin-bottom:12px;">
                     ${
                       membrosDoProjeto.map(membro=>{
                         const perfil=perfisPorId.get(
@@ -6044,6 +6038,12 @@ async function abrirColaboradoresDoDashboard(){
                       }).join("")
                     }
                   </div>
+
+                  <p>
+                    Estão colaborando com você neste projeto:
+                  </p>
+
+                  ${resumoProjetoParticipacao(projeto)}
                 </div>
 
                 <div class="participation-request-actions">
@@ -6053,6 +6053,14 @@ async function abrirColaboradoresDoDashboard(){
                     data-action="abrir-projeto-colaborador"
                     data-project="${esc(projeto.id)}">
                     Abrir projeto
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-action="editar-projeto-colaborador"
+                    data-project="${esc(projeto.id)}">
+                    Editar projeto
                   </button>
                 </div>
               </article>
