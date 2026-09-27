@@ -5992,6 +5992,9 @@ async function abrirColaboradoresDoDashboard(){
             return `
               <article class="participation-request">
                 <div class="participation-request-info">
+                  <p>
+                    Estão colaborando com você neste projeto:
+                  </p>
                   <div
                     style="display:flex;
                            flex-wrap:wrap;
@@ -6038,10 +6041,6 @@ async function abrirColaboradoresDoDashboard(){
                       }).join("")
                     }
                   </div>
-
-                  <p>
-                    Estão colaborando com você neste projeto:
-                  </p>
 
                   ${resumoProjetoParticipacao(projeto)}
                 </div>
