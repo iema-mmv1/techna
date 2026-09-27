@@ -5325,7 +5325,7 @@ async function abrirConvitesDoDashboard(){
                 </p>
               </div>
 
-              <div class="participation-request-actions">
+                            <div class="participation-request-actions">
                 ${
                   projeto
                     ?`<button type="button"
@@ -5336,6 +5336,22 @@ async function abrirConvitesDoDashboard(){
                       </button>`
                     :""
                 }
+
+                <button type="button"
+                        class="btn btn-primary"
+                        data-action="decidir-convite"
+                        data-invitation-id="${esc(convite.id)}"
+                        data-decision="aceitar">
+                  Aceitar
+                </button>
+
+                <button type="button"
+                        class="btn btn-danger"
+                        data-action="decidir-convite"
+                        data-invitation-id="${esc(convite.id)}"
+                        data-decision="recusar">
+                  Recusar
+                </button>
               </div>
             </article>
           `;
@@ -5498,7 +5514,66 @@ async function abrirConvitesDoDashboard(){
       await openProject(a.dataset.project);
       return;
     }
+     if(n==="decidir-convite"){
+      const invitationId=a.dataset.invitationId;
+      const decision=a.dataset.decision;
 
+      if(
+        !invitationId ||
+        !["aceitar","recusar"].includes(decision)
+      )return;
+
+      const confirmed=window.confirm(
+        decision==="aceitar"
+          ?"Aceitar este convite e entrar no projeto?"
+          :"Recusar este convite?"
+      );
+
+      if(!confirmed)return;
+
+      const buttons=[
+        ...modalRoot.querySelectorAll(
+          '[data-action="decidir-convite"]'
+        )
+      ];
+
+      buttons.forEach(button=>button.disabled=true);
+
+      try{
+        const {error}=await supabaseClient.rpc(
+          "decidir_convite_participacao",
+          {
+            p_invitation_id:invitationId,
+            p_decisao:decision
+          }
+        );
+
+        if(error){
+          console.error("Erro ao responder convite:",error);
+          showToast(authError(error));
+          buttons.forEach(button=>button.disabled=false);
+          return;
+        }
+
+        showToast(
+          decision==="aceitar"
+            ?"Convite aceito. Você entrou no projeto."
+            :"Convite recusado."
+        );
+
+        if(state.page==="dashboard"){
+          await dashboard();
+        }
+
+        await abrirConvitesDoDashboard();
+      }catch(error){
+        console.error("Erro ao responder convite:",error);
+        showToast("Não foi possível responder ao convite.");
+        buttons.forEach(button=>button.disabled=false);
+      }
+
+      return;
+    }
     if(n==="abrir-projeto-colaborador"){
       await openProject(a.dataset.project);
       return;
