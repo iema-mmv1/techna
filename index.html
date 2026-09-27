@@ -1694,6 +1694,75 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
   from{transform:translateX(105%)}
   to{transform:translateX(0)}
 }
+/* Indicadores na borda externa dos cartões */
+.stats .stat{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  overflow:hidden;
+  border-color:transparent;
+}
+
+.stats .stat-border{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  overflow:visible;
+  fill:none;
+  pointer-events:none;
+}
+
+.stats .stat-border-base{
+  stroke:#e9e1eb;
+  stroke-width:2.5;
+}
+
+.stats .stat-border-fill{
+  stroke:var(--p);
+  stroke-width:3.5;
+}
+
+.stats .stat-content{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  width:100%;
+  margin-top:7px;
+}
+
+.stats .stat-icon{
+  color:var(--p);
+  font-size:1.45rem;
+  font-weight:800;
+  line-height:1;
+}
+
+.stats .stat-content b{
+  margin:0;
+  font-size:1.6rem;
+}
+
+@media(max-width:560px){
+  .stats .stat{
+    aspect-ratio:auto;
+    min-height:88px;
+  }
+
+  .stats .stat-content{
+    gap:4px;
+  }
+
+  .stats .stat-icon{
+    font-size:1rem;
+  }
+
+  .stats .stat-content b{
+    font-size:1.15rem;
+  }
+}
 </style>
 </head>
 <body>
@@ -2329,69 +2398,108 @@ async function dashboard(){
   frame(`
     <div class="stats">
       <article class="stat">
+        ${statBorder(meusProjetos.length,20)}
         <small>Meus projetos</small>
-        <b>${meusProjetos.length}</b>
+        <span class="stat-content">
+          <span class="stat-icon" aria-hidden="true">▣</span>
+          <b>${meusProjetos.length}</b>
+        </span>
       </article>
 
       <article class="stat">
-        <small>Projetos concluídos</small>
-        <b>${
+        ${statBorder(
           meusProjetos.filter(
             project=>project.status==="concluido"
-          ).length
-        }</b>
+          ).length,
+          50
+        )}
+        <small>Projetos concluídos</small>
+        <span class="stat-content">
+          <span class="stat-icon" aria-hidden="true">✓</span>
+          <b>${
+            meusProjetos.filter(
+              project=>project.status==="concluido"
+            ).length
+          }</b>
+        </span>
       </article>
 
       <button type="button"
               class="stat"
-              data-action="dashboard-acompanhamentos"
-              style="text-align:left;cursor:pointer;">
+              data-action="dashboard-acompanhamentos">
+        ${statBorder(
+          membrosResult.error?0:acompanhamentos.length,
+          50
+        )}
         <small>Em acompanhamento</small>
-        <b>${
-          membrosResult.error
-            ?"—"
-            :acompanhamentos.length
-        }</b>
+        <span class="stat-content">
+          <span class="stat-icon" aria-hidden="true">◎</span>
+          <b>${
+            membrosResult.error
+              ?"—"
+              :acompanhamentos.length
+          }</b>
+        </span>
       </button>
 
       <button type="button"
               class="stat"
-              data-action="dashboard-pedidos"
-              style="text-align:left;cursor:pointer;">
+              data-action="dashboard-pedidos">
+        ${statBorder(
+          pedidosResult.error?0:pedidosPendentes.length,
+          50
+        )}
         <small>Pedidos de participação</small>
-        <b>${
-          pedidosResult.error
-            ?"—"
-            :pedidosPendentes.length
-        }</b>
+        <span class="stat-content">
+          <span class="stat-icon" aria-hidden="true">?</span>
+          <b>${
+            pedidosResult.error
+              ?"—"
+              :pedidosPendentes.length
+          }</b>
+        </span>
       </button>
 
-            <button type="button"
+      <button type="button"
               class="stat"
-              data-action="dashboard-colaboradores"
-              style="text-align:left;cursor:pointer;">
+              data-action="dashboard-colaboradores">
+        ${statBorder(
+          colaboradoresResult.error?0:colaboradores.size,
+          50
+        )}
         <small>Colaboram comigo</small>
-        <b>${
-          colaboradoresResult.error
-            ?"—"
-            :colaboradores.size
-        }</b>
+        <span class="stat-content">
+          <span class="stat-icon" aria-hidden="true">♧</span>
+          <b>${
+            colaboradoresResult.error
+              ?"—"
+              :colaboradores.size
+          }</b>
+        </span>
       </button>
 
-            <button type="button"
+      <button type="button"
               class="stat"
-              data-action="dashboard-convites"
-              style="text-align:left;cursor:pointer;">
-        <small>Convites</small>
-        <b>${
+              data-action="dashboard-convites">
+        ${statBorder(
           convitesResult.error
-            ?"—"
-            :(convitesResult.data||[]).length
-        }</b>
+            ?0
+            :(convitesResult.data||[]).length,
+          50
+        )}
+        <small>Convites</small>
+        <span class="stat-content">
+          <span class="stat-icon" aria-hidden="true">✉</span>
+          <b>${
+            convitesResult.error
+              ?"—"
+              :(convitesResult.data||[]).length
+          }</b>
+        </span>
       </button>
+
       <article class="stat">
-        <small>Progresso médio</small>
-        <b>${
+        ${statBorder(
           meusProjetos.length
             ?Math.round(
               meusProjetos.reduce(
@@ -2400,8 +2508,25 @@ async function dashboard(){
                 0
               )/meusProjetos.length
             )
-            :0
-        }%</b>
+            :0,
+          100,
+          true
+        )}
+        <small>Progresso médio</small>
+        <span class="stat-content">
+          <span class="stat-icon" aria-hidden="true">↗</span>
+          <b>${
+            meusProjetos.length
+              ?Math.round(
+                meusProjetos.reduce(
+                  (total,project)=>
+                    total+Number(project.progresso||0),
+                  0
+                )/meusProjetos.length
+              )
+              :0
+          }%</b>
+        </span>
       </article>
     </div>
 
