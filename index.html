@@ -2501,140 +2501,27 @@ const progressoMedio=meusProjetos.length
   ];
   
   frame(`
-    <div class="stats">
-      <article class="stat">
-        ${statBorder(meusProjetos.length,20)}
-        <small>Meus projetos</small>
-        <span class="stat-content">
-          <span class="stat-icon" aria-hidden="true">▣</span>
-          <b>${meusProjetos.length}</b>
-        </span>
-      </article>
+        <div class="stats">
+      ${statItems.map(item=>{
+        const tag=item.action?"button":"article";
+        const action=item.action
+          ?` type="button" data-action="${item.action}"`
+          :"";
 
-      <article class="stat">
-        ${statBorder(
-          meusProjetos.filter(
-            project=>project.status==="concluido"
-          ).length,
-          50
-        )}
-        <small>Projetos concluídos</small>
-        <span class="stat-content">
-          <span class="stat-icon" aria-hidden="true">✓</span>
-          <b>${
-            meusProjetos.filter(
-              project=>project.status==="concluido"
-            ).length
-          }</b>
-        </span>
-      </article>
-
-      <button type="button"
-              class="stat"
-              data-action="dashboard-acompanhamentos">
-        ${statBorder(
-          membrosResult.error?0:acompanhamentos.length,
-          50
-        )}
-        <small>Em acompanhamento</small>
-        <span class="stat-content">
-          <span class="stat-icon" aria-hidden="true">◎</span>
-          <b>${
-            membrosResult.error
-              ?"—"
-              :acompanhamentos.length
-          }</b>
-        </span>
-      </button>
-
-      <button type="button"
-              class="stat"
-              data-action="dashboard-pedidos">
-        ${statBorder(
-          pedidosResult.error?0:pedidosPendentes.length,
-          50
-        )}
-        <small>Pedidos de participação</small>
-        <span class="stat-content">
-          <span class="stat-icon" aria-hidden="true">?</span>
-          <b>${
-            pedidosResult.error
-              ?"—"
-              :pedidosPendentes.length
-          }</b>
-        </span>
-      </button>
-
-      <button type="button"
-              class="stat"
-              data-action="dashboard-colaboradores">
-        ${statBorder(
-          colaboradoresResult.error?0:colaboradores.size,
-          50
-        )}
-        <small>Colaboram comigo</small>
-        <span class="stat-content">
-          <span class="stat-icon" aria-hidden="true">♧</span>
-          <b>${
-            colaboradoresResult.error
-              ?"—"
-              :colaboradores.size
-          }</b>
-        </span>
-      </button>
-
-      <button type="button"
-              class="stat"
-              data-action="dashboard-convites">
-        ${statBorder(
-          convitesResult.error
-            ?0
-            :(convitesResult.data||[]).length,
-          50
-        )}
-        <small>Convites</small>
-        <span class="stat-content">
-          <span class="stat-icon" aria-hidden="true">✉</span>
-          <b>${
-            convitesResult.error
-              ?"—"
-              :(convitesResult.data||[]).length
-          }</b>
-        </span>
-      </button>
-
-      <article class="stat">
-        ${statBorder(
-          meusProjetos.length
-            ?Math.round(
-              meusProjetos.reduce(
-                (total,project)=>
-                  total+Number(project.progresso||0),
-                0
-              )/meusProjetos.length
-            )
-            :0,
-          100,
-          true
-        )}
-        <small>Progresso médio</small>
-        <span class="stat-content">
-          <span class="stat-icon" aria-hidden="true">↗</span>
-          <b>${
-            meusProjetos.length
-              ?Math.round(
-                meusProjetos.reduce(
-                  (total,project)=>
-                    total+Number(project.progresso||0),
-                  0
-                )/meusProjetos.length
-              )
-              :0
-          }%</b>
-        </span>
-      </article>
+        return `
+          <${tag} class="stat"${action}>
+            <span class="stat-top">
+              ${statIcon(item.icon)}
+              <span class="stat-number">
+                ${statBorder(item.value,item.max)}
+                <b>${item.value}${item.percent?"%":""}</b>
+              </span>
+            </span>
+            <small>${item.label}</small>
+          </${tag}>
+        `;
+      }).join("")}
     </div>
-
     <div class="dash-grid">
       <section class="card wide">
         <div class="card-head">
