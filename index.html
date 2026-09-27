@@ -4510,19 +4510,24 @@ document.addEventListener("click",async event=>{
       String(project.autora_id)!==String(state.user.id)
     )return;
 
-    openModal("Convidar pessoa",`
+    openModal("Convidar pessoas",`
       <div class="project-section"
            id="invite-project-panel"
            data-project="${esc(projectId)}">
         <p class="muted">
-          Pesquise pelo início do nome e selecione uma pessoa
-          para convidá-la ao projeto.
+          Pesquise pelo nome. Você pode selecionar mais de
+          uma pessoa antes de enviar os convites.
         </p>
 
         <div class="field">
           <label for="invite-person-search">
-            Nome da pessoa
+            Pessoas convidadas
           </label>
+
+          <div id="invite-selected-people"
+               style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+          </div>
+
           <input
             id="invite-person-search"
             class="input"
@@ -4533,8 +4538,6 @@ document.addEventListener("click",async event=>{
 
         <div id="invite-person-results"
              aria-live="polite"></div>
-
-        <div id="invite-person-selected"></div>
 
         <div class="project-actions">
           <button
@@ -4549,7 +4552,7 @@ document.addEventListener("click",async event=>{
             type="button"
             data-action="send-project-invite"
             disabled>
-            Enviar convite
+            Enviar convites
           </button>
         </div>
       </div>
@@ -4576,20 +4579,73 @@ document.addEventListener("click",async event=>{
     const panel=personButton.closest("#invite-project-panel");
     if(!panel)return;
 
-    panel.dataset.selectedUser=personButton.dataset.user;
-    panel.dataset.selectedName=personButton.dataset.name;
+    const selected=panel.querySelector(
+      "#invite-selected-people"
+    );
+    const userId=personButton.dataset.user;
+    const name=personButton.dataset.name;
 
-    panel.querySelector("#invite-person-selected").innerHTML=`
-      <p>
-        Pessoa selecionada:
-        <strong>${esc(personButton.dataset.name)}</strong>
-      </p>
-    `;
+    const alreadySelected=[...selected.children].some(
+      chip=>chip.dataset.user===userId
+    );
+
+    if(!alreadySelected){
+      selected.insertAdjacentHTML("beforeend",`
+        <span
+          data-user="${esc(userId)}"
+          data-name="${esc(name)}"
+          style="display:inline-flex;align-items:center;gap:6px;
+                 padding:5px 9px;border:1px solid currentColor;
+                 border-radius:999px;">
+          <span>${esc(name)}</span>
+          <button
+            type="button"
+            data-action="remove-invite-person"
+            aria-label="Remover ${esc(name)} da seleção"
+            style="border:0;background:none;color:inherit;
+                   cursor:pointer;font-size:18px;line-height:1;">
+            ×
+          </button>
+        </span>
+      `);
+    }
 
     panel.querySelector(
       '[data-action="send-project-invite"]'
     ).disabled=false;
 
+    const input=panel.querySelector(
+      "#invite-person-search"
+    );
+
+    input.value="";
+    panel.querySelector(
+      "#invite-person-results"
+    ).innerHTML="";
+
+    clearTimeout(inviteSearchTimer);
+    inviteSearchVersion++;
+    input.focus();
+    return;
+  }
+
+  const removeButton=event.target.closest(
+    '[data-action="remove-invite-person"]'
+  );
+
+  if(removeButton){
+    const panel=removeButton.closest("#invite-project-panel");
+    if(!panel)return;
+
+    removeButton.parentElement.remove();
+
+    panel.querySelector(
+      '[data-action="send-project-invite"]'
+    ).disabled=!panel.querySelector(
+      "#invite-selected-people"
+    ).children.length;
+
+    panel.querySelector("#invite-person-search").focus();
     return;
   }
 
@@ -4603,8 +4659,6 @@ document.addEventListener("click",async event=>{
   if(!panel)return;
 
   const projectId=panel.dataset.project;
-  const invitedUserId=panel.dataset.selectedUser;
-  const invitedName=panel.dataset.selectedName;
   const project=state.projects.find(
     p=>String(p.id)===String(projectId)
   );
@@ -4612,46 +4666,89 @@ document.addEventListener("click",async event=>{
   if(
     !state.user ||
     !project ||
-    String(project.autora_id)!==String(state.user.id) ||
-    !invitedUserId ||
-    !invitedName
+    String(project.autora_id)!==String(state.user.id)
   )return;
 
+  const people=[
+    ...panel.querySelector("#invite-selected-people").children
+  ].map(chip=>({
+    id:chip.dataset.user,
+    name:chip.dataset.name
+  }));
+
+  if(!people.length)return;
+
+  const names=people.map(person=>person.name).join(", ");
+
   if(!window.confirm(
-    `Enviar convite para ${invitedName} participar deste projeto?`
+    `Enviar convite de participação para: ${names}?`
   ))return;
 
   sendButton.disabled=true;
 
+  let sent=0;
+  const failures=[];
+
   try{
-    const {error}=await supabaseClient
-      .from("project_invitations")
-      .insert({
-        project_id:projectId,
-        invited_user_id:invitedUserId,
-        invited_by:state.user.id,
-        invitation_type:"participante",
-        status:"pendente"
-      });
+    for(const person of people){
+      const {error}=await supabaseClient
+        .from("project_invitations")
+        .insert({
+          project_id:projectId,
+          invited_user_id:person.id,
+          invited_by:state.user.id,
+          invitation_type:"participante",
+          status:"pendente"
+        });
 
-    if(error){
-      console.error("Erro ao enviar convite:",error);
+      if(error){
+        console.error(
+          `Erro ao convidar ${person.name}:`,
+          error
+        );
 
+        failures.push(
+          error.code==="23505"
+            ?`${person.name}: já existe um convite neste projeto.`
+            :`${person.name}: ${authError(error)}`
+        );
+      }else{
+        sent++;
+        const chip=[
+          ...panel.querySelector(
+            "#invite-selected-people"
+          ).children
+        ].find(
+          item=>item.dataset.user===person.id
+        );
+
+        chip?.remove();
+      }
+    }
+
+    if(failures.length){
       showToast(
-        error.code==="23505"
-          ?"Já existe um convite desse tipo para essa pessoa neste projeto."
-          :authError(error)
+        `${sent} convite(s) enviado(s). ` +
+        failures.join(" ")
       );
+
+      sendButton.disabled=!panel.querySelector(
+        "#invite-selected-people"
+      ).children.length;
 
       return;
     }
 
-    showToast("Convite enviado.");
+    showToast(
+      sent===1
+        ?"Convite enviado."
+        :`${sent} convites enviados.`
+    );
+
     await openProject(projectId);
   }catch(error){
-    console.error("Erro ao enviar convite:",error);
-    showToast("Não foi possível enviar o convite.");
-  }finally{
+    console.error("Erro ao enviar convites:",error);
+    showToast("Não foi possível concluir o envio.");
     sendButton.disabled=false;
   }
 });
@@ -4667,16 +4764,6 @@ document.addEventListener("input",event=>{
   const results=panel.querySelector(
     "#invite-person-results"
   );
-  const sendButton=panel.querySelector(
-    '[data-action="send-project-invite"]'
-  );
-
-  panel.dataset.selectedUser="";
-  panel.dataset.selectedName="";
-  panel.querySelector(
-    "#invite-person-selected"
-  ).innerHTML="";
-  sendButton.disabled=true;
 
   clearTimeout(inviteSearchTimer);
   const version=++inviteSearchVersion;
@@ -4722,8 +4809,18 @@ document.addEventListener("input",event=>{
         return;
       }
 
-      results.innerHTML=(data||[]).length
-        ?data.map(person=>{
+      const selectedIds=new Set(
+        [...panel.querySelector(
+          "#invite-selected-people"
+        ).children].map(chip=>chip.dataset.user)
+      );
+
+      const available=(data||[]).filter(
+        person=>!selectedIds.has(String(person.id))
+      );
+
+      results.innerHTML=available.length
+        ?available.map(person=>{
           const name=person.nome||
                      person.username||
                      "Usuário";
@@ -4754,7 +4851,7 @@ document.addEventListener("input",event=>{
           `;
         }).join("")
         :`<p class="muted">
-            Nenhuma pessoa encontrada.
+            Nenhuma outra pessoa encontrada.
           </p>`;
     }catch(error){
       if(
