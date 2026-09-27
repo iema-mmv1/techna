@@ -1910,7 +1910,8 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
 <div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div><script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
 <script>
 "use strict";
-const SUPABASE_URL="https://edtgebzafwkounipfvrb.supabase.co";const SUPABASE_ANON_KEY="sb_publishable_t2nSHz0OetO50wFuSGct6A_tiRt3Fu-";const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true,flowType:"pkce"}});const APP_URL=window.location.href.split("?")[0].split("#")[0];const app=document.getElementById("app"),modalRoot=document.getElementById("modal-root"),toast=document.getElementById("toast");const state={user:null,profile:null,page:"dashboard",projects:[],news:[],favorites:[],session:null,projectUpdates:{}};const carouselState={index:0,timer:null,paused:false};const defaultSteps=[{titulo:"Ideia e definição do problema",percentual:5},{titulo:"Pesquisa e requisitos",percentual:10},{titulo:"Planejamento do projeto",percentual:10},{titulo:"Equipe e responsabilidades",percentual:5},{titulo:"Desenvolvimento inicial",percentual:15},{titulo:"Desenvolvimento principal",percentual:20},{titulo:"Protótipo funcional",percentual:10},{titulo:"Testes e validação",percentual:10},{titulo:"Ajustes finais",percentual:5},{titulo:"Apresentação e documentação",percentual:10}];const demoProjects=[{id:"demo-1",titulo:"Horta inteligente",descricao:"Protótipo de irrigação automatizada para o campus.",progresso:75,status:"em_andamento"},{id:"demo-2",titulo:"Campanha Conecta",descricao:"Estratégia de marketing para aproximar projetos e comunidade.",progresso:50,status:"em_testes"},{id:"demo-3",titulo:"Painel de ideias",descricao:"Espaço colaborativo para organizar soluções estudantis.",progresso:30,status:"planejamento"}];const demoNews=[{id:"demo-n1",titulo:"Projeto Horta inteligente chega à fase de testes",resumo:"A equipe concluiu o protótipo e iniciou os testes de campo.",categoria:"Projeto em destaque"},{id:"demo-n2",titulo:"TECHNA abre votação para o destaque do mês",resumo:"Conheça os projetos indicados pela comunidade.",categoria:"Comunidade"}];function esc(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]))}
+const SUPABASE_URL="https://edtgebzafwkounipfvrb.supabase.co";const SUPABASE_ANON_KEY="sb_publishable_t2nSHz0OetO50wFuSGct6A_tiRt3Fu-";const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true,flowType:"pkce"}});const APP_URL=window.location.href.split("?")[0].split("#")[0];const app=document.getElementById("app"),modalRoot=document.getElementById("modal-root"),toast=document.getElementById("toast");const state={user:null,profile:null,page:"dashboard",projects:[],news:[],favorites:[],session:null,projectUpdates:{}};const carouselState={index:0,timer:null,paused:false};const defaultSteps=[{titulo:"Ideia e definição do problema",percentual:5},{titulo:"Pesquisa e requisitos",percentual:10},{titulo:"Planejamento do projeto",percentual:10},{titulo:"Equipe e responsabilidades",percentual:5},{titulo:"Desenvolvimento inicial",percentual:15},{titulo:"Desenvolvimento principal",percentual:20},{titulo:"Protótipo funcional",percentual:10},{titulo:"Testes e validação",percentual:10},{titulo:"Ajustes finais",percentual:5},{titulo:"Apresentação e documentação",percentual:10}];const demoProjects=[{id:"demo-1",titulo:"Horta inteligente",descricao:"Protótipo de irrigação automatizada para o campus.",progresso:75,status:"em_andamento"},{id:"demo-2",titulo:"Campanha Conecta",descricao:"Estratégia de marketing para aproximar projetos e comunidade.",progresso:50,status:"em_testes"},{id:"demo-3",titulo:"Painel de ideias",descricao:"Espaço colaborativo para organizar soluções estudantis.",progresso:30,status:"planejamento"}];const demoNews=[{id:"demo-n1",titulo:"Projeto Horta inteligente chega à fase de testes",resumo:"A equipe concluiu o protótipo e iniciou os testes de campo.",categoria:"Projeto em destaque"},{id:"demo-n2",titulo:"TECHNA abre votação para o destaque do mês",resumo:"Conheça os projetos indicados pela comunidade.",categoria:"Comunidade"}];
+function esc(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]))}
 function showToast(text, isNotification = false) {
   toast.textContent = text;
   toast.classList.add("show");
@@ -3965,9 +3966,51 @@ function projectInteractionsHtml(project,interactions,participant=false){
   `;
 }
 function registerModal(){openModal("Criar conta",`<form id="account-form"><div class="form-grid"><div class="field span-2"><label>Nome completo</label><input class="input" name="nome" required></div><div class="field span-2"><label>Username</label><input class="input" name="username" required></div><div class="field"><label>E-mail</label><input class="input" type="email" name="email" required></div><div class="field"><label>Senha</label><input class="input" type="password" name="password" minlength="6" required></div><div class="field span-2"><label>Tipo de conta</label><div class="role-grid"><button type="button" class="role selected" data-role="aluno"><strong>Aluno</strong></button><button type="button" class="role" data-role="professor"><strong>Professor</strong></button></div><input type="hidden" name="tipo" value="aluno"></div><div class="field span-2" id="courseField"><label>Curso</label><select class="select" name="curso"><option value="">Escolha seu curso</option><option>Marketing</option><option>Administração</option><option>Informática</option></select></div></div><p id="account-message" class="message"></p><button type="submit" class="btn btn-primary full">Criar conta</button></form>`);document.querySelectorAll("[data-role]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-role]").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");document.querySelector('[name="tipo"]').value=b.dataset.role;document.getElementById("courseField").classList.toggle("hidden",b.dataset.role!=="aluno")})}function googleProfileModal(){openModal("Complete seu cadastro",`<form id="google-profile-form"><div class="field"><label>Nome</label><input class="input" name="nome" value="${esc(state.user?.user_metadata?.full_name||"")}" required></div><div class="field"><label>Username</label><input class="input" name="username" required></div><div class="field"><label>Curso</label><select class="select" name="curso"><option value="">Escolha seu curso</option><option>Marketing</option><option>Administração</option><option>Informática</option></select></div><p id="google-profile-message" class="message"></p><button class="btn btn-primary full">Salvar perfil e entrar</button></form>`)}function openForgot(){openModal("Recuperar acesso",`<form id="forgot-form"><label>E-mail</label><input class="input" id="forgot-email" type="email" required><p id="forgot-message" class="message"></p><button class="btn btn-primary full">Enviar instruções</button></form>`)}
-function projectEditModal(project){
+async function projectEditModal(project){
+  if(
+    !project ||
+    !state.user ||
+    String(project.autora_id)!==String(state.user.id)
+  ){
+    showToast("Você não tem permissão para editar este projeto.");
+    return;
+  }
+
+  const stepsResult=await supabaseClient
+    .from("project_steps")
+    .select("titulo")
+    .eq("project_id",project.id)
+    .eq("concluida",true);
+
+  if(stepsResult.error){
+    console.error(
+      "Erro ao carregar etapas do projeto:",
+      stepsResult.error
+    );
+    showToast("Não foi possível carregar as etapas do projeto.");
+    return;
+  }
+
+  const concluidas=new Set(
+    (stepsResult.data||[]).map(step=>step.titulo)
+  );
+
+  const progressoAtual=Math.min(
+    100,
+    defaultSteps.reduce(
+      (total,step)=>
+        total+(
+          concluidas.has(step.titulo)
+            ?Number(step.percentual)
+            :0
+        ),
+      0
+    )
+  );
+
   openModal("Editar projeto",`
-    <form id="edit-project-form" data-project="${esc(project.id)}">
+    <form id="edit-project-form"
+          data-project="${esc(project.id)}">
       <div class="form-grid">
         <div class="field span-2">
           <label>Título</label>
@@ -4006,35 +4049,80 @@ function projectEditModal(project){
           <label>Participação</label>
           <select class="select" name="tipo_participacao">
             <option value="aberto"
-              ${project.tipo_participacao==="aberto"?"selected":""}>
+              ${project.tipo_participacao==="aberto"
+                ?"selected"
+                :""}>
               Aberto
             </option>
             <option value="fechado"
-              ${project.tipo_participacao==="fechado"?"selected":""}>
+              ${project.tipo_participacao==="fechado"
+                ?"selected"
+                :""}>
               Fechado
             </option>
           </select>
         </div>
 
         <div class="album-editor">
-  <h3>Álbum do projeto</h3>
-  <p>Adicione fotos e escolha uma delas como capa.</p>
+          <h3>Álbum do projeto</h3>
+          <p>Adicione fotos e escolha uma delas como capa.</p>
 
-  <label for="edit-project-images" class="btn btn-secondary">
-    + Adicionar fotos
-  </label>
+          <label for="edit-project-images"
+                 class="btn btn-secondary">
+            + Adicionar fotos
+          </label>
 
-  <input
-    id="edit-project-images"
-    class="hidden"
-    type="file"
-    accept="image/*"
-    multiple>
+          <input
+            id="edit-project-images"
+            class="hidden"
+            type="file"
+            accept="image/*"
+            multiple>
 
-  <div id="edit-project-album" class="album-editor-grid">
-    <p class="muted">Carregando imagens...</p>
-  </div>
-</div>
+          <div id="edit-project-album"
+               class="album-editor-grid">
+            <p class="muted">Carregando imagens...</p>
+          </div>
+        </div>
+
+        <div class="field span-2">
+          <label>Avanço do projeto</label>
+          <p class="muted">
+            Marque as novas etapas que você concluiu.
+            As etapas já concluídas não podem ser desmarcadas aqui.
+          </p>
+
+          <div class="roadmap-summary">
+            <span>Progresso das etapas</span>
+            <strong id="edit-roadmap-progress">
+              ${progressoAtual}%
+            </strong>
+          </div>
+
+          <div class="steps">
+            ${defaultSteps.map((step,i)=>{
+              const concluida=concluidas.has(step.titulo);
+
+              return `
+                <label class="step">
+                  <input
+                    type="checkbox"
+                    name="edit-step"
+                    value="${i}"
+                    data-percent="${step.percentual}"
+                    ${concluida?"checked disabled":""}>
+                  <span>
+                    ${esc(step.titulo)}
+                    <small class="muted">
+                      (${step.percentual}%)
+                      ${concluida?"— já concluída":""}
+                    </small>
+                  </span>
+                </label>
+              `;
+            }).join("")}
+          </div>
+        </div>
       </div>
 
       <p id="edit-project-message" class="message"></p>
@@ -4056,9 +4144,28 @@ function projectEditModal(project){
     </form>
   `);
 
- setupProjectAlbumEditor(project);
-}
+  setupProjectAlbumEditor(project);
 
+  const form=document.getElementById("edit-project-form");
+
+  form?.querySelectorAll('[name="edit-step"]')
+    .forEach(input=>{
+      input.addEventListener("change",()=>{
+        const total=[
+          ...form.querySelectorAll(
+            '[name="edit-step"]:checked'
+          )
+        ].reduce(
+          (sum,item)=>
+            sum+Number(item.dataset.percent||0),
+          0
+        );
+
+        form.querySelector("#edit-roadmap-progress")
+          .textContent=`${Math.min(100,total)}%`;
+      });
+    });
+}
 let editingProjectAlbum=null;
 
 async function setupProjectAlbumEditor(project){
@@ -4177,11 +4284,16 @@ async function saveProjectEdit(e){
   const project=state.projects.find(
     x=>String(x.id)===String(id)
   );
-  const message=document.getElementById("edit-project-message");
+  const message=document.getElementById(
+    "edit-project-message"
+  );
   const album=editingProjectAlbum;
 
-  if(!project||!state.user||
-     String(project.autora_id)!==String(state.user.id)){
+  if(
+    !project ||
+    !state.user ||
+    String(project.autora_id)!==String(state.user.id)
+  ){
     message.textContent=
       "Você não tem permissão para editar este projeto.";
     return;
@@ -4197,6 +4309,71 @@ async function saveProjectEdit(e){
   button.disabled=true;
 
   try{
+    const stepsResult=await supabaseClient
+      .from("project_steps")
+      .select("titulo")
+      .eq("project_id",id)
+      .eq("concluida",true);
+
+    if(stepsResult.error)throw stepsResult.error;
+
+    const concluidas=new Set(
+      (stepsResult.data||[]).map(step=>step.titulo)
+    );
+
+    const novasEtapas=[
+      ...form.querySelectorAll(
+        '[name="edit-step"]:checked:not(:disabled)'
+      )
+    ]
+      .map(input=>Number(input.value))
+      .filter(index=>
+        Number.isInteger(index) &&
+        defaultSteps[index] &&
+        !concluidas.has(defaultSteps[index].titulo)
+      );
+
+    if(novasEtapas.length){
+      const insertResult=await supabaseClient
+        .from("project_steps")
+        .insert(
+          novasEtapas.map(index=>({
+            project_id:id,
+            titulo:defaultSteps[index].titulo,
+            ordem:index+1,
+            concluida:true
+          }))
+        );
+
+      if(insertResult.error)throw insertResult.error;
+
+      novasEtapas.forEach(index=>{
+        concluidas.add(defaultSteps[index].titulo);
+      });
+    }
+
+    const progresso=Math.min(
+      100,
+      defaultSteps.reduce(
+        (total,step)=>
+          total+(
+            concluidas.has(step.titulo)
+              ?Number(step.percentual)
+              :0
+          ),
+        0
+      )
+    );
+
+    const status=
+      progresso===100
+        ?"concluido"
+        :progresso===0
+          ?"planejamento"
+          :project.status==="em_testes"
+            ?"em_testes"
+            :"em_andamento";
+
     let ordem=0;
 
     for(const image of album.images){
@@ -4252,10 +4429,14 @@ async function saveProjectEdit(e){
         titulo:form.elements.titulo.value.trim(),
         descricao:form.elements.descricao.value.trim(),
         objetivo:form.elements.objetivo.value.trim()||null,
-        area:form.elements.area.value.trim()||"Não informada",
+        area:
+          form.elements.area.value.trim()||
+          "Não informada",
         tipo_participacao:
           form.elements.tipo_participacao.value,
-        imagem_capa_url
+        imagem_capa_url,
+        progresso,
+        status
       })
       .eq("id",id)
       .eq("autora_id",state.user.id)
@@ -4268,7 +4449,7 @@ async function saveProjectEdit(e){
     closeModal();
     await loadData();
     await goPage(state.page);
-    showToast("Projeto e álbum atualizados.");
+    showToast("Projeto, etapas e álbum atualizados.");
   }catch(error){
     console.error("Erro ao salvar projeto/álbum:",error);
     message.textContent=authError(error);
