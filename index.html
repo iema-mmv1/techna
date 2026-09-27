@@ -3976,11 +3976,18 @@ async function projectEditModal(project){
     return;
   }
 
-  const stepsResult=await supabaseClient
-    .from("project_steps")
-    .select("titulo")
-    .eq("project_id",project.id)
-    .eq("concluida",true);
+  const [stepsResult,membrosResult]=await Promise.all([
+    supabaseClient
+      .from("project_steps")
+      .select("titulo")
+      .eq("project_id",project.id)
+      .eq("concluida",true),
+
+    supabaseClient
+      .from("project_members")
+      .select("user_id")
+      .eq("project_id",project.id)
+  ]);
 
   if(stepsResult.error){
     console.error(
@@ -3991,8 +3998,59 @@ async function projectEditModal(project){
     return;
   }
 
+  if(membrosResult.error){
+    console.error(
+      "Erro ao carregar colaboradores:",
+      membrosResult.error
+    );
+    showToast("Não foi possível carregar os colaboradores.");
+    return;
+  }
+
   const concluidas=new Set(
     (stepsResult.data||[]).map(step=>step.titulo)
+  );
+
+  const membros=[
+    ...new Map(
+      (membrosResult.data||[])
+        .filter(membro=>
+          membro.user_id &&
+          String(membro.user_id)!==String(state.user.id)
+        )
+        .map(membro=>[
+          String(membro.user_id),
+          membro
+        ])
+    ).values()
+  ];
+
+  const perfisResult=membros.length
+    ?await supabaseClient
+      .from("profiles")
+      .select("id,nome,username,foto_url")
+      .in(
+        "id",
+        membros.map(membro=>membro.user_id)
+      )
+    :{data:[],error:null};
+
+  if(perfisResult.error){
+    console.error(
+      "Erro ao carregar perfis dos colaboradores:",
+      perfisResult.error
+    );
+    showToast(
+      "Não foi possível carregar os perfis dos colaboradores."
+    );
+    return;
+  }
+
+  const perfisPorId=new Map(
+    (perfisResult.data||[]).map(perfil=>[
+      String(perfil.id),
+      perfil
+    ])
   );
 
   const progressoAtual=Math.min(
@@ -4082,6 +4140,87 @@ async function projectEditModal(project){
           <div id="edit-project-album"
                class="album-editor-grid">
             <p class="muted">Carregando imagens...</p>
+          </div>
+        </div>
+
+        <div class="field span-2">
+          <label>Colaboradores</label>
+          <p class="muted">
+            Passe o mouse sobre a foto para ver o nome.
+            Salve outras alterações antes de remover alguém.
+          </p>
+
+          <div style="display:flex;flex-wrap:wrap;gap:14px;
+                      align-items:center;">
+            ${
+              membros.length
+                ?membros.map(membro=>{
+                  const perfil=perfisPorId.get(
+                    String(membro.user_id)
+                  );
+                  const nome=perfil?.nome||
+                             perfil?.username||
+                             "Colaborador";
+
+                  return `
+                    <div class="project-person"
+                         title="${esc(nome)}"
+                         style="position:relative;
+                                display:inline-flex;
+                                align-items:center;
+                                justify-content:center;">
+                      <span
+                        class="project-person-avatar"
+                        aria-label="${esc(nome)}"
+                        style="width:52px;height:52px;
+                               border-radius:50%;
+                               overflow:hidden;
+                               display:grid;
+                               place-items:center;">
+                        ${
+                          perfil?.foto_url
+                            ?`<img
+                                src="${esc(perfil.foto_url)}"
+                                alt="${esc(nome)}"
+                                style="width:100%;height:100%;
+                                       object-fit:cover;">`
+                            :esc(initials(nome))
+                        }
+                      </span>
+
+                      <strong style="position:absolute;
+                                     width:1px;height:1px;
+                                     overflow:hidden;
+                                     clip-path:inset(50%);
+                                     white-space:nowrap;">
+                        ${esc(nome)}
+                      </strong>
+
+                      <button
+                        type="button"
+                        data-action="remove-project-member"
+                        data-project="${esc(project.id)}"
+                        data-user="${esc(membro.user_id)}"
+                        title="Remover ${esc(nome)}"
+                        aria-label="Remover ${esc(nome)}"
+                        style="position:absolute;
+                               top:-7px;right:-7px;
+                               width:22px;height:22px;
+                               border:0;border-radius:50%;
+                               cursor:pointer;
+                               background:#c62828;
+                               color:white;
+                               line-height:22px;
+                               text-align:center;">
+                        ×
+                      </button>
+                    </div>
+                  `;
+                }).join("")
+                :`<p class="muted">
+                    Este projeto ainda não tem colaboradores.
+                  </p>`
+            }
           </div>
         </div>
 
