@@ -2124,7 +2124,7 @@ async function dashboard(){
     project=>String(project.autora_id)===String(userId)
   );
 
-  const [membrosResult,pedidosResult,colaboradoresResult]=
+  const [membrosResult,pedidosResult,colaboradoresResult,convitesResult]=
     await Promise.all([
       supabaseClient
         .from("project_members")
@@ -2150,7 +2150,13 @@ async function dashboard(){
             "project_id",
             meusProjetos.map(project=>project.id)
           )
-        :Promise.resolve({data:[],error:null})
+        :Promise.resolve({data:[],error:null}),
+
+      supabaseClient
+        .from("project_invitations")
+        .select("id")
+        .eq("invited_user_id",userId)
+        .eq("status","pendente")
     ]);
 
   if(membrosResult.error){
@@ -2256,11 +2262,17 @@ async function dashboard(){
         }</b>
       </button>
 
-      <article class="stat">
+            <button type="button"
+              class="stat"
+              data-action="dashboard-convites"
+              style="text-align:left;cursor:pointer;">
         <small>Convites</small>
-        <b>0</b>
-      </article>
-
+        <b>${
+          convitesResult.error
+            ?"—"
+            :(convitesResult.data||[]).length
+        }</b>
+      </button>
       <article class="stat">
         <small>Progresso médio</small>
         <b>${
@@ -5225,6 +5237,115 @@ async function abrirColaboradoresDoDashboard(){
 }
   
 document.addEventListener("click",async e=>{
+async function abrirConvitesDoDashboard(){
+  if(!state.user)return;
+
+  const result=await supabaseClient
+    .from("project_invitations")
+    .select("id,project_id,invited_by,created_at")
+    .eq("invited_user_id",state.user.id)
+    .eq("status","pendente")
+    .order("created_at",{ascending:false});
+
+  if(result.error){
+    console.error("Erro ao carregar convites:",result.error);
+    showToast("Não foi possível carregar os convites.");
+    return;
+  }
+
+  const convites=result.data||[];
+
+  const ids=[
+    ...new Set(
+      convites.map(convite=>convite.invited_by)
+        .filter(Boolean)
+    )
+  ];
+
+  const perfisResult=ids.length
+    ?await supabaseClient
+      .from("profiles")
+      .select("id,nome,username,foto_url")
+      .in("id",ids)
+    :{data:[],error:null};
+
+  if(perfisResult.error){
+    console.error(
+      "Erro ao carregar autores dos convites:",
+      perfisResult.error
+    );
+    showToast("Não foi possível carregar os convites.");
+    return;
+  }
+
+  const perfisPorId=new Map(
+    (perfisResult.data||[]).map(perfil=>[
+      String(perfil.id),
+      perfil
+    ])
+  );
+
+  const projetosPorId=new Map(
+    state.projects.map(projeto=>[
+      String(projeto.id),
+      projeto
+    ])
+  );
+
+  openModal("Convites recebidos",`
+    ${
+      convites.length
+        ?convites.map(convite=>{
+          const projeto=projetosPorId.get(
+            String(convite.project_id)
+          );
+          const perfil=perfisPorId.get(
+            String(convite.invited_by)
+          );
+          const nome=perfil?.nome||
+                     perfil?.username||
+                     "Usuário";
+
+          return `
+            <article class="participation-request">
+              <span class="project-person-avatar">
+                ${
+                  perfil?.foto_url
+                    ?`<img src="${esc(perfil.foto_url)}"
+                            alt="Foto de ${esc(nome)}">`
+                    :esc(initials(nome))
+                }
+              </span>
+
+              <div class="participation-request-info">
+                <strong>${esc(nome)}</strong>
+                <p>
+                  Convidou você para participar de:
+                  ${esc(projeto?.titulo||"Projeto")}
+                </p>
+              </div>
+
+              <div class="participation-request-actions">
+                ${
+                  projeto
+                    ?`<button type="button"
+                              class="btn btn-secondary"
+                              data-action="abrir-projeto-convite"
+                              data-project="${esc(projeto.id)}">
+                        Ver projeto
+                      </button>`
+                    :""
+                }
+              </div>
+            </article>
+          `;
+        }).join("")
+        :`<p class="empty">
+            Você não tem convites pendentes.
+          </p>`
+    }
+  `);
+}
   const coverButton=e.target.closest("[data-album-cover]");
   const removeButton=e.target.closest("[data-album-remove]");
 
