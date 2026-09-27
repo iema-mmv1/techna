@@ -5489,6 +5489,15 @@ async function abrirConvitesDoDashboard(){
       await abrirColaboradoresDoDashboard();
       return;
     }
+     if(n==="dashboard-convites"){
+      await abrirConvitesDoDashboard();
+      return;
+    }
+
+    if(n==="abrir-projeto-convite"){
+      await openProject(a.dataset.project);
+      return;
+    }
 
     if(n==="abrir-projeto-colaborador"){
       await openProject(a.dataset.project);
