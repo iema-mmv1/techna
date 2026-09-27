@@ -2282,7 +2282,49 @@ async function dashboard(){
   const activities=state.projects.length
     ?await getActivities()
     :[];
-  const feed=activities.length?activities:demoNews;
+    const feed=activities.length?activities:demoNews;
+
+  const statBorder=(value,max,continuous=false)=>{
+    const amount=Math.max(0,Number(value)||0);
+    const limit=Math.min(max,amount);
+
+    const base=`
+      <rect x="2" y="2" width="96" height="96" rx="13"
+            pathLength="${max}"
+            class="stat-border-base"
+            stroke-dasharray="${
+              continuous?`${max} 0`:`.72 .28`
+            }" />
+    `;
+
+    const fill=continuous
+      ?`
+        <rect x="2" y="2" width="96" height="96" rx="13"
+              pathLength="${max}"
+              class="stat-border-fill"
+              stroke-dasharray="${limit} ${max-limit}"
+              stroke-dashoffset="0" />
+      `
+      :Array.from(
+        {length:Math.min(max,Math.floor(amount))},
+        (_,index)=>`
+          <rect x="2" y="2" width="96" height="96" rx="13"
+                pathLength="${max}"
+                class="stat-border-fill"
+                stroke-dasharray=".72 ${max-.72}"
+                stroke-dashoffset="${-index}" />
+        `
+      ).join("");
+
+    return `
+      <svg class="stat-border"
+           viewBox="0 0 100 100"
+           preserveAspectRatio="none"
+           aria-hidden="true">
+        ${base}${fill}
+      </svg>
+    `;
+  };
 
   frame(`
     <div class="stats">
