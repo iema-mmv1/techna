@@ -2957,7 +2957,8 @@ function renderApp(){
   }
   goPage(state.page);
 }
-function openModal(title,body){modalRoot.innerHTML=`<div class="modal-bg" data-close-modal><div class="modal"><div class="modal-head"><h2>${title}</h2><button class="close" data-close-modal>×</button></div>${body}</div></div>`}function closeModal(){modalRoot.innerHTML=""}
+function openModal(title,body){modalRoot.innerHTML=`<div class="modal-bg" data-close-modal><div class="modal"><div class="modal-head"><h2>${title}</h2><button class="close" data-close-modal>×</button></div>${body}</div></div>`}
+function closeModal(){modalRoot.innerHTML=""}
 async function openProject(id){
   const p=state.projects.find(x=>String(x.id)===String(id));
   if(!p)return;
@@ -3067,6 +3068,12 @@ async function openProject(id){
                          data-project="${esc(id)}">
                    Editar projeto
                  </button>
+                 <button class="btn btn-primary"
+        type="button"
+        data-action="invite-project-member"
+        data-project="${esc(id)}">
+  Convidar pessoa
+</button>
                  <button class="btn btn-danger"
                          type="button"
                          data-action="delete-project"
