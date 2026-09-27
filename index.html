@@ -3724,43 +3724,38 @@ function renderApp(){
                 aria-expanded="false">☰</button>
 
         <nav class="techna-header-nav" aria-label="Navegação principal">
-          <button type="button" data-action="new-project">Novo projeto</button>
-          <button type="button" data-page="projects">Projetos</button>
-          <button type="button" data-page="news">Notícias</button>
-          <button type="button" data-page="favorites">Favoritos</button>
-          <button type="button"
-        class="techna-install-button"
-        data-action="install-app">
-  Instalar aplicativo
-</button>
+  <button type="button" data-action="new-project">Novo projeto</button>
+  <button type="button" data-page="projects">Projetos</button>
+  <button type="button" data-page="teacher">Área dos professores</button>
+  <button type="button" data-page="news">Notícias</button>
+  <button type="button" data-page="favorites">Favoritos</button>
 
-          <div class="techna-more">
-            <button type="button" class="techna-more-trigger"
-                    aria-label="Mais opções">
-              Mais ▾
-            </button>
-            <div class="techna-more-menu">
-              ${p?.tipo_usuario==="professor"
-  ?""
-  :`<button type="button" data-page="voting">
-      Destaque do mês
-    </button>`}
-<button type="button" data-page="suggestions">Sugestões</button>
-<button type="button" data-page="teacher">Área dos professores</button>
-${p?.tipo_usuario==="professor"
-  ?`<button type="button" data-action="edit-profile">
-      Editar perfil de professor
-    </button>`
-  :""}
-              ${p?.tipo_usuario==="administradora"
-  ?`<button type="button" data-page="admin">
-      Administração
-    </button>`
-  :""}
-            </div>
-          </div>
-          </nav>
+  ${p?.tipo_usuario==="professor"
+    ?""
+    :`<button type="button" data-page="voting">
+        Destaque do mês
+      </button>`}
 
+  <button type="button" data-page="suggestions">Sugestões</button>
+
+  <button type="button"
+          class="techna-install-button"
+          data-action="install-app">
+    Instalar aplicativo
+  </button>
+
+  ${p?.tipo_usuario==="professor"
+    ?`<button type="button" data-action="edit-profile">
+        Editar perfil de professor
+      </button>`
+    :""}
+
+  ${p?.tipo_usuario==="administradora"
+    ?`<button type="button" data-page="admin">
+        Administração
+      </button>`
+    :""}
+</nav>
         <div class="techna-header-actions">
           <label class="techna-search">
   <span aria-hidden="true">⌕</span>
