@@ -3740,9 +3740,18 @@ function renderApp(){
               Mais ▾
             </button>
             <div class="techna-more-menu">
-              <button type="button" data-page="voting">Destaque do mês</button>
-              <button type="button" data-page="suggestions">Sugestões</button>
-              <button type="button" data-page="teacher">Área dos professores</button>
+              ${p?.tipo_usuario==="professor"
+  ?""
+  :`<button type="button" data-page="voting">
+      Destaque do mês
+    </button>`}
+<button type="button" data-page="suggestions">Sugestões</button>
+<button type="button" data-page="teacher">Área dos professores</button>
+${p?.tipo_usuario==="professor"
+  ?`<button type="button" data-action="edit-profile">
+      Editar perfil de professor
+    </button>`
+  :""}
               ${p?.tipo_usuario==="administradora"
   ?`<button type="button" data-page="admin">
       Administração
