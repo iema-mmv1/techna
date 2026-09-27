@@ -3502,6 +3502,99 @@ async function restoreProject(id) {
   await goPage("trash");
   showToast("Projeto restaurado com sucesso.");
 }
+async function adminPage(){
+  if(state.profile?.tipo_usuario!=="administradora"){
+    await goPage("dashboard");
+    showToast("Acesso administrativo não autorizado.");
+    return;
+  }
+
+  frame(`
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>Pedidos de perfil de professor</h2>
+          <p class="muted">
+            Analise as solicitações antes de conceder
+            o perfil de professor.
+          </p>
+        </div>
+      </div>
+      <div id="admin-professor-requests"
+           aria-live="polite">
+        <p class="muted">Carregando solicitações...</p>
+      </div>
+    </section>
+  `);
+
+  const container=document.getElementById(
+    "admin-professor-requests"
+  );
+
+  const result=await supabaseClient.rpc(
+    "listar_professores_pendentes"
+  );
+
+  if(!container?.isConnected || state.page!=="admin")return;
+
+  if(result.error){
+    console.error(
+      "Erro ao carregar pedidos de professor:",
+      result.error
+    );
+    container.innerHTML=`
+      <p class="message">
+        Não foi possível carregar as solicitações.
+      </p>
+    `;
+    return;
+  }
+
+  const pedidos=result.data||[];
+
+  container.innerHTML=pedidos.length
+    ?pedidos.map(pedido=>`
+      <article class="participation-request"
+               style="padding:16px 0;
+                      border-top:1px solid var(--line)">
+        <div class="participation-request-info">
+          <strong>${esc(pedido.nome||"Usuário")}</strong>
+          <p class="muted">
+            ${esc(pedido.email||"")} ·
+            @${esc(pedido.username||"")}
+          </p>
+          <small class="muted">
+            Solicitado em
+            ${new Date(pedido.criado_em)
+              .toLocaleString("pt-BR")}
+          </small>
+        </div>
+
+        <div class="project-actions">
+          <button type="button"
+                  class="btn btn-primary"
+                  data-action="decide-professor-profile"
+                  data-user-id="${esc(pedido.id)}"
+                  data-user-name="${esc(pedido.nome||"Usuário")}"
+                  data-decision="aprovar">
+            Aprovar
+          </button>
+
+          <button type="button"
+                  class="btn btn-danger"
+                  data-action="decide-professor-profile"
+                  data-user-id="${esc(pedido.id)}"
+                  data-user-name="${esc(pedido.nome||"Usuário")}"
+                  data-decision="recusar">
+            Recusar
+          </button>
+        </div>
+      </article>
+    `).join("")
+    :`<p class="empty">
+        Nenhum pedido de professor pendente.
+      </p>`;
+}
 async function goPage(page) {
   state.page = page;
 
@@ -3516,7 +3609,7 @@ async function goPage(page) {
     voting: simplePage,
     suggestions: simplePage,
     teacher: simplePage,
-    admin: simplePage,
+    admin: adminPage,
     about: aboutPage,
     team: teamPage,
     privacy: privacyPage,
@@ -3560,7 +3653,11 @@ function renderApp(){
               <button type="button" data-page="voting">Destaque do mês</button>
               <button type="button" data-page="suggestions">Sugestões</button>
               <button type="button" data-page="teacher">Área dos professores</button>
-              <button type="button" data-page="admin">Administração</button>
+              ${p?.tipo_usuario==="administradora"
+  ?`<button type="button" data-page="admin">
+      Administração
+    </button>`
+  :""}
             </div>
           </div>
           </nav>
@@ -7314,6 +7411,71 @@ setInterval(technaRefreshPendingRequestsCount,3000);
 document.addEventListener("visibilitychange",()=>{
   if(!document.hidden){
     technaRefreshPendingRequestsCount();
+  }
+});
+document.addEventListener("click",async event=>{
+  const button=event.target.closest(
+    '[data-action="decide-professor-profile"]'
+  );
+
+  if(!button || button.disabled)return;
+  if(state.profile?.tipo_usuario!=="administradora")return;
+
+  const userId=button.dataset.userId;
+  const decision=button.dataset.decision;
+  const name=button.dataset.userName||"este usuário";
+
+  if(!userId || !["aprovar","recusar"].includes(decision)){
+    return;
+  }
+
+  const confirmed=await showConfirmation({
+    title:decision==="aprovar"
+      ?"Aprovar perfil de professor?"
+      :"Recusar perfil de professor?",
+    message:decision==="aprovar"
+      ?`Conceder o perfil de professor a ${name}?`
+      :`Recusar o pedido de ${name}? A pessoa poderá solicitar novamente.`,
+    confirmText:decision==="aprovar"
+      ?"Aprovar"
+      :"Recusar"
+  });
+
+  if(!confirmed)return;
+
+  const buttons=[
+    ...document.querySelectorAll(
+      '[data-action="decide-professor-profile"]'
+    )
+  ];
+
+  buttons.forEach(item=>item.disabled=true);
+
+  try{
+    const result=await supabaseClient.rpc(
+      "decidir_perfil_professor",
+      {
+        p_usuario_id:userId,
+        p_decisao:decision
+      }
+    );
+
+    if(result.error)throw result.error;
+
+    showToast(
+      decision==="aprovar"
+        ?"Perfil de professor aprovado."
+        :"Pedido recusado. A pessoa poderá solicitar novamente."
+    );
+
+    await adminPage();
+  }catch(error){
+    console.error(
+      "Erro ao decidir perfil de professor:",
+      error
+    );
+    showToast(authError(error));
+    buttons.forEach(item=>item.disabled=false);
   }
 });
 </script>
