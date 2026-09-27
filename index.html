@@ -5794,9 +5794,12 @@ async function abrirConvitesDoDashboard(){
         :`<p class="empty">
             Você não tem convites pendentes.
           </p>`
-    }
+        }
+    </div>
   `);
 }
+
+document.addEventListener("click",async e=>{
   const coverButton=e.target.closest("[data-album-cover]");
   const removeButton=e.target.closest("[data-album-remove]");
 
