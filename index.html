@@ -1829,6 +1829,51 @@ body:not(.techna-notification-visible) .techna-profile-menu.is-open .techna-prof
     min-width:0;
   }
 }
+.participation-project-preview{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  margin:10px 0;
+}
+
+.participation-project-cover{
+  display:grid;
+  flex:0 0 72px;
+  width:72px;
+  height:72px;
+  place-items:center;
+  overflow:hidden;
+  border-radius:10px;
+  color:var(--lime);
+  background:var(--p);
+}
+
+.participation-project-cover img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.participation-project-text{
+  min-width:0;
+}
+
+.participation-project-text strong{
+  display:block;
+  overflow-wrap:anywhere;
+}
+
+.participation-project-text p{
+  display:-webkit-box;
+  margin:4px 0 0;
+  overflow:hidden;
+  color:var(--muted);
+  font-size:.84rem;
+  line-height:1.35;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
 </style>
 </head>
 <body>
@@ -5295,6 +5340,24 @@ function showConfirmation({
     cancelButton.focus();
   });
 }
+function resumoProjetoParticipacao(projeto){
+  return `
+    <div class="participation-project-preview">
+      <div class="participation-project-cover">
+        ${
+          projeto?.imagem_capa_url
+            ? `<img src="${esc(projeto.imagem_capa_url)}"
+                    alt="Capa de ${esc(projeto.titulo)}">`
+            : `<span aria-hidden="true">✦</span>`
+        }
+      </div>
+      <div class="participation-project-text">
+        <strong>${esc(projeto?.titulo||"Projeto")}</strong>
+        <p>${esc(projeto?.descricao||"Sem descrição do projeto.")}</p>
+      </div>
+    </div>
+  `;
+}
 async function abrirPedidosDoDashboard(){
   const meusProjetos=state.projects.filter(
     project=>
@@ -5402,10 +5465,7 @@ async function abrirPedidosDoDashboard(){
 
                 <div class="participation-request-info">
                   <strong>${esc(nome)}</strong>
-                  <p>
-                    Projeto:
-                    <strong>${esc(projeto?.titulo||"Projeto")}</strong>
-                  </p>
+                  ${resumoProjetoParticipacao(projeto)}
                   ${
                     pedido.mensagem
                       ?`<p>${esc(pedido.mensagem)}</p>`
@@ -5557,7 +5617,7 @@ async function abrirColaboradoresDoDashboard(){
 
               <div class="participation-request-info">
                 <strong>${esc(nome)}</strong>
-                <p>Projeto: ${esc(projeto.titulo)}</p>
+                ${resumoProjetoParticipacao(projeto)}
                 ${
                   membro.funcao
                     ?`<small>${esc(membro.funcao)}</small>`
@@ -5666,10 +5726,8 @@ async function abrirConvitesDoDashboard(){
 
               <div class="participation-request-info">
                 <strong>${esc(nome)}</strong>
-                <p>
-                  Convidou você para participar de:
-                  ${esc(projeto?.titulo||"Projeto")}
-                </p>
+                <p>Convidou você para participar do projeto:</p>
+                ${resumoProjetoParticipacao(projeto)}
               </div>
 
                             <div class="participation-request-actions">
